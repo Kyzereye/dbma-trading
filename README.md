@@ -254,4 +254,4 @@ Symbol universe — four endpoints (append `?apikey=YOUR_KEY`):
 
 https://financialmodelingprep.com/stable/profile?symbol=AAPL&apikey=dhJ8r9XEYsJWIiiBa2uvmrivcPdW8zLD
 
-https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=AAPL&from=1990-08-15&to=2025-12-15&apikey=dhJ8r9XEYsJWIiiBa2uvmrivcPdW8zLD
+https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=AAPL&from=1990-08-15&to=2025-12-15&apikey=dhJ8r9XEYsJWIiiBa2uvmrivcPdW8zLD# dbma-trading
