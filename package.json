@@ -1,0 +1,17 @@
+{
+  "name": "dbma-trading",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "optimize:ma": "node scripts/optimize-ma.mjs",
+    "get-symbols": "node scripts/get-symbols.mjs",
+    "sync-symbol-changes": "node scripts/sync-symbol-changes.mjs",
+    "get-bulk-price-data": "node scripts/get-bulk-price-data.mjs",
+    "get-daily-price-data": "node scripts/get-daily-price-data.mjs",
+    "scan:nightly": "node scripts/nightly-scan.mjs",
+    "pipeline:nightly": "npm run get-daily-price-data && npm run scan:nightly"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
