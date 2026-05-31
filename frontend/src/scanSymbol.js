@@ -19,10 +19,10 @@ export function runningTotalFromTrades(trades) {
  */
 export function classifyLastSignal(trades, markers, lastBarDate) {
   const onLast = markers.filter((m) => m.time === lastBarDate);
-  if (onLast.some((m) => m.text === "Exit")) {
+  if (onLast.some((m) => m.text === "Close")) {
     return { lastSignal: "exit", signalDate: lastBarDate };
   }
-  if (onLast.some((m) => m.text === "Entry")) {
+  if (onLast.some((m) => m.text === "Open")) {
     return { lastSignal: "entry", signalDate: lastBarDate };
   }
 

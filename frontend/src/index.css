@@ -230,7 +230,7 @@ button:disabled {
 
 .meta {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 1.02rem;
   margin-bottom: 0.75rem;
 }
 
@@ -284,13 +284,14 @@ button:disabled {
 }
 
 .expand-panel summary::before {
-  content: "▸ ";
+  content: "▸";
   display: inline-block;
   color: var(--muted);
+  margin-right: 0.55rem;
 }
 
 .expand-panel[open] summary::before {
-  content: "▾ ";
+  content: "▾";
 }
 
 .expand-body {
@@ -525,6 +526,74 @@ button:disabled {
 
 .app-header-link:hover {
   opacity: 0.85;
+}
+
+.app-header-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.75rem 1.25rem;
+}
+
+.daily-signals-page {
+  flex: 1;
+  max-width: 72rem;
+  padding: 1.5rem clamp(1rem, 3vw, 2rem) 2rem;
+}
+
+.daily-signals-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.daily-signals-intro {
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.daily-signals-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.daily-signals-date input[type="date"] {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  color-scheme: dark;
+}
+
+.daily-signals-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.daily-signals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.daily-signals-company {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .daily-signals-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .app-shell > .app-layout {

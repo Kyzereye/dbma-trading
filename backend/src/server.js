@@ -4,7 +4,12 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { getPool } from "./db.js";
-import { loadScanForLatestDate, searchSymbols } from "./scanData.js";
+import {
+  listScanDates,
+  loadScanForDate,
+  loadScanForLatestDate,
+  searchSymbols,
+} from "./scanData.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
@@ -24,6 +29,13 @@ function normalizeSymbol(raw) {
   if (typeof raw !== "string") return null;
   const s = raw.trim().toUpperCase();
   if (!/^[A-Z0-9.\-^]{1,32}$/.test(s)) return null;
+  return s;
+}
+
+function normalizeDate(raw) {
+  if (typeof raw !== "string") return null;
+  const s = raw.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
   return s;
 }
 
@@ -103,6 +115,57 @@ app.get("/api/scanner", async (req, res) => {
   }
 });
 
+app.get("/api/scanner/day", async (req, res) => {
+  try {
+    const availableDates = await listScanDates();
+    if (!availableDates.length) {
+      res.json({
+        date: null,
+        availableDates: [],
+        computedAt: null,
+        total: 0,
+        entries: [],
+        exits: [],
+      });
+      return;
+    }
+
+    const requested = normalizeDate(
+      typeof req.query.date === "string" ? req.query.date : ""
+    );
+    const date = requested ?? availableDates[0];
+
+    if (requested && !availableDates.includes(requested)) {
+      res.json({
+        date: requested,
+        hasScan: false,
+        availableDates,
+        computedAt: null,
+        total: 0,
+        entries: [],
+        exits: [],
+      });
+      return;
+    }
+
+    const scan = await loadScanForDate(date);
+    res.json({
+      date: scan.asOfDate,
+      hasScan: true,
+      availableDates,
+      computedAt: scan.computedAt,
+      total: scan.total,
+      entries: scan.entries,
+      exits: scan.exits,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: err.message || "Daily scanner query failed",
+    });
+  }
+});
+
 app.get("/api/daily-stock-data", async (req, res) => {
   const symbol = normalizeSymbol(req.query.symbol);
   if (!symbol) {
@@ -116,7 +179,7 @@ app.get("/api/daily-stock-data", async (req, res) => {
   try {
     const [rows] = await pool.execute(
       `
-      SELECT d.date, d.open, d.high, d.low, d.close, d.volume
+      SELECT d.date, d.open, d.high, d.low, d.close, d.volume, s.company_name
       FROM daily_stock_data d
       INNER JOIN stock_symbols s ON d.symbol_id = s.id
       WHERE s.symbol = ?
@@ -146,7 +209,10 @@ app.get("/api/daily-stock-data", async (req, res) => {
 
     res.json({
       symbol,
+      companyName: String(rows[0].company_name ?? "").trim() || null,
       historyYears: HISTORY_YEARS,
+      fromDate: data[0].date,
+      toDate: data[data.length - 1].date,
       count: data.length,
       data,
     });

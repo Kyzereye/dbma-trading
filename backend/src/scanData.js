@@ -9,12 +9,20 @@ function historyStartDate(years) {
   return d.toISOString().slice(0, 10);
 }
 
+function formatDateOnly(value) {
+  if (value == null) return null;
+  if (value instanceof Date) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return String(value).slice(0, 10);
+}
+
 function mapBarRow(row) {
   return {
-    date:
-      row.date instanceof Date
-        ? row.date.toISOString().slice(0, 10)
-        : String(row.date).slice(0, 10),
+    date: formatDateOnly(row.date),
     open: Number(row.open),
     high: Number(row.high),
     low: Number(row.low),
@@ -143,10 +151,7 @@ export async function getLatestScanMeta() {
   );
   if (!rows.length) return null;
   return {
-    asOfDate:
-      rows[0].asOfDate instanceof Date
-        ? rows[0].asOfDate.toISOString().slice(0, 10)
-        : String(rows[0].asOfDate).slice(0, 10),
+    asOfDate: formatDateOnly(rows[0].asOfDate),
     computedAt: rows[0].computedAt,
   };
 }
@@ -154,10 +159,10 @@ export async function getLatestScanMeta() {
 function mapScanRow(row) {
   return {
     symbol: row.symbol,
-    asOfDate:
-      row.as_of_date instanceof Date
-        ? row.as_of_date.toISOString().slice(0, 10)
-        : String(row.as_of_date).slice(0, 10),
+    companyName: row.company_name
+      ? String(row.company_name).trim() || null
+      : null,
+    asOfDate: formatDateOnly(row.as_of_date),
     optFast: Number(row.opt_fast),
     optSlow: Number(row.opt_slow),
     optUsedDefault: Boolean(row.opt_used_default),
@@ -166,12 +171,7 @@ function mapScanRow(row) {
     optMinReturn: row.opt_min_return != null ? Number(row.opt_min_return) : null,
     runningTotal: Number(row.running_total),
     lastSignal: row.last_signal,
-    signalDate:
-      row.signal_date == null
-        ? null
-        : row.signal_date instanceof Date
-          ? row.signal_date.toISOString().slice(0, 10)
-          : String(row.signal_date).slice(0, 10),
+    signalDate: formatDateOnly(row.signal_date),
     barCount: Number(row.bar_count),
   };
 }
@@ -194,4 +194,56 @@ export async function loadScanForLatestDate() {
   );
 
   return { meta, rows: rows.map(mapScanRow) };
+}
+
+export async function listScanDates(limit = 500) {
+  const lim = Math.min(2000, Math.max(1, Math.floor(limit) || 500));
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    `
+    SELECT DISTINCT as_of_date
+    FROM symbol_daily_scan
+    ORDER BY as_of_date DESC
+    LIMIT ${lim}
+    `
+  );
+  return rows.map((r) => formatDateOnly(r.as_of_date));
+}
+
+export async function loadScanForDate(asOfDate) {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    `
+    SELECT scan.symbol, scan.as_of_date, scan.opt_fast, scan.opt_slow,
+           scan.opt_used_default, scan.opt_r3y, scan.opt_r1y, scan.opt_min_return,
+           scan.running_total, scan.last_signal, scan.signal_date, scan.bar_count,
+           ss.company_name
+    FROM symbol_daily_scan scan
+    LEFT JOIN stock_symbols ss ON ss.symbol = scan.symbol
+    WHERE scan.as_of_date = ?
+    ORDER BY scan.symbol ASC
+    `,
+    [asOfDate]
+  );
+
+  const mapped = rows.map(mapScanRow);
+  const entries = mapped.filter((r) => r.lastSignal === "entry");
+  const exits = mapped.filter((r) => r.lastSignal === "exit");
+
+  const [metaRows] = await pool.execute(
+    `
+    SELECT MAX(computed_at) AS computedAt
+    FROM symbol_daily_scan
+    WHERE as_of_date = ?
+    `,
+    [asOfDate]
+  );
+
+  return {
+    asOfDate,
+    computedAt: metaRows[0]?.computedAt ?? null,
+    total: mapped.length,
+    entries,
+    exits,
+  };
 }

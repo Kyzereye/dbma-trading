@@ -109,50 +109,30 @@ export default function ScannerPanel({ activeSymbol, onSelectSymbol }) {
             <div className="scanner-grid">
               <section>
                 <h3 className="scanner-heading">
-                  Recent entries ({data.entries.length})
+                  Recent opens ({data.entries.length})
                 </h3>
                 <ScanTable
                   rows={data.entries}
                   onSelect={handleSelect}
                   activeSymbol={activeSymbol}
-                  emptyMessage="No entries on the latest bar."
+                  emptyMessage="No opens on the latest bar."
                 />
               </section>
               <section>
                 <h3 className="scanner-heading">
-                  Recent exits ({data.exits.length})
+                  Recent closes ({data.exits.length})
                 </h3>
                 <ScanTable
                   rows={data.exits}
                   onSelect={handleSelect}
                   activeSymbol={activeSymbol}
-                  emptyMessage="No exits on the latest bar."
-                />
-              </section>
-              <section>
-                <h3 className="scanner-heading">
-                  In position ({data.inPosition?.length ?? 0})
-                </h3>
-                <ScanTable
-                  rows={data.inPosition ?? []}
-                  onSelect={handleSelect}
-                  activeSymbol={activeSymbol}
-                  emptyMessage="No open positions."
+                  emptyMessage="No closes on the latest bar."
                 />
               </section>
               <section>
                 <h3 className="scanner-heading">Top running P/L</h3>
                 <ScanTable
                   rows={data.top}
-                  onSelect={handleSelect}
-                  activeSymbol={activeSymbol}
-                  emptyMessage="No ranked symbols."
-                />
-              </section>
-              <section>
-                <h3 className="scanner-heading">Bottom running P/L</h3>
-                <ScanTable
-                  rows={data.bottom}
                   onSelect={handleSelect}
                   activeSymbol={activeSymbol}
                   emptyMessage="No ranked symbols."

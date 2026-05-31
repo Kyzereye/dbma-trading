@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AppHeader from "./AppHeader.jsx";
 import CandlestickChart from "./CandlestickChart.jsx";
+import DailySignals from "./DailySignals.jsx";
 import { MA_FAST_COLOR, MA_SLOW_COLOR } from "./chartColors.js";
 import { formatPct, optimizeMa } from "./optimizeMa.js";
 import ScannerPanel from "./ScannerPanel.jsx";
@@ -32,6 +33,42 @@ function syncMaInputs(periods, setFastInput, setSlowInput) {
 function formatPnl(v) {
   const sign = v >= 0 ? "+" : "";
   return `${sign}${v.toFixed(2)}`;
+}
+
+function formatDataSpan(fromDate, toDate) {
+  if (!fromDate || !toDate) return "";
+  const from = new Date(`${fromDate}T12:00:00`);
+  const to = new Date(`${toDate}T12:00:00`);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to < from) {
+    return "";
+  }
+
+  const totalMonths =
+    (to.getFullYear() - from.getFullYear()) * 12 +
+    (to.getMonth() - from.getMonth()) +
+    1;
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+
+  function plural(n, word) {
+    return `${n} ${word}${n === 1 ? "" : "s"}`;
+  }
+
+  if (years === 0) {
+    return plural(totalMonths, "month");
+  }
+  if (months === 0) {
+    return plural(years, "year");
+  }
+  return `${plural(years, "year")} ${plural(months, "month")}`;
+}
+
+function formatChartMeta(companyName, sym, fromDate, toDate) {
+  const span = formatDataSpan(fromDate, toDate);
+  const name = companyName?.trim();
+  const parts = name ? [name, sym] : [sym];
+  if (span) parts.push(span);
+  return parts.join(" - ");
 }
 
 function enrichTradesForTable(trades) {
@@ -99,7 +136,12 @@ export default function App() {
     applyMaPeriods(
       clampMaConfig(optFast, optSlow, "ema", { fast: optFast, slow: optSlow, maType: "ema" })
     );
+    setPage("chart");
     load(sym);
+  }
+
+  function onSelectFromDaily(sym, optFast, optSlow) {
+    onSelectFromScanner(sym, optFast, optSlow);
   }
 
   function applyMaPeriods(next) {
@@ -153,9 +195,12 @@ export default function App() {
         page={page}
         onGoChart={() => setPage("chart")}
         onGoRules={() => setPage("rules")}
+        onGoDaily={() => setPage("daily")}
       />
       {page === "rules" ? (
         <TradingRules />
+      ) : page === "daily" ? (
+        <DailySignals onSelectSymbol={onSelectFromDaily} />
       ) : (
     <div className="app-layout">
       <aside className="sidebar">
@@ -234,11 +279,11 @@ export default function App() {
           />
         </label>
         <label className="ma-controls-field">
-          <span>Entry confirm</span>
+          <span>Open confirm</span>
           <select
             value={entryConfirm}
             onChange={(e) => setEntryConfirm(e.target.value)}
-            aria-label="Entry confirmation"
+            aria-label="Open confirmation"
           >
             <option value={ENTRY_CONFIRM.SINGLE}>One close above fast</option>
             <option value={ENTRY_CONFIRM.DOUBLE}>
@@ -250,21 +295,16 @@ export default function App() {
       </aside>
 
       <main className="main-content">
-        <ScannerPanel
-          activeSymbol={symbol}
-          onSelectSymbol={onSelectFromScanner}
-        />
-
-        <p className="sub">
-          Daily OHLC from MySQL ({payload?.historyYears ?? 3}-year window).{" "}
-          {maType.toUpperCase()} {fast} / {maType.toUpperCase()} {slow}
-        </p>
-
         {payload ? (
           <>
             <div className="meta">
-            {symbol} · {payload.count} bars
-          </div>
+              {formatChartMeta(
+                payload.companyName,
+                symbol,
+                payload.fromDate,
+                payload.toDate
+              )}
+            </div>
           <div className="panel">
             {series.length ? (
               <>
@@ -281,20 +321,25 @@ export default function App() {
             )}
           </div>
 
+          <ScannerPanel
+            activeSymbol={symbol}
+            onSelectSymbol={onSelectFromScanner}
+          />
+
           {series.length && trades.length ? (
             <details className="expand-panel">
               <summary>
-                Entries &amp; exits ({trades.filter((t) => !t.open).length}
-                {trades.some((t) => t.open) ? ", 1 open" : ""})
+                Opens &amp; closes ({trades.filter((t) => !t.open).length}
+                {trades.some((t) => t.open) ? ", 1 still open" : ""})
               </summary>
               <div className="expand-body">
                 <table className="trades-table">
                   <thead>
                     <tr>
-                      <th>Entry</th>
-                      <th>Entry price</th>
-                      <th>Exit</th>
-                      <th>Exit price</th>
+                      <th>Open</th>
+                      <th>Open price</th>
+                      <th>Close</th>
+                      <th>Close price</th>
                       <th className="trades-col-num">P/L</th>
                       <th className="trades-col-num">Running total</th>
                     </tr>
@@ -305,7 +350,7 @@ export default function App() {
                         <td>{t.entryDate}</td>
                         <td>{t.entryPrice.toFixed(2)}</td>
                         <td>{t.open ? "—" : t.exitDate}</td>
-                        <td>{t.open ? "Open" : t.exitPrice.toFixed(2)}</td>
+                        <td>{t.open ? "—" : t.exitPrice.toFixed(2)}</td>
                         <td className="trades-col-num">
                           {t.tradePnl == null ? "—" : formatPnl(t.tradePnl)}
                         </td>

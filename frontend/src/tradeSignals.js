@@ -53,7 +53,7 @@ export function simulateTrades(
         position: "aboveBar",
         shape: "arrowDown",
         color: "#ef5350",
-        text: "Exit",
+        text: "Close",
       });
       open = null;
       needsRecoveryAboveFast = true;
@@ -76,7 +76,7 @@ export function simulateTrades(
         position: "belowBar",
         shape: "arrowUp",
         color: "#6abf69",
-        text: "Entry",
+        text: "Open",
       });
     }
   }
