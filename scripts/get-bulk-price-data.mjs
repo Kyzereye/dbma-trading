@@ -17,11 +17,13 @@ import {
   todayIso,
   yearsAgoIso,
 } from "./get-stock-data.mjs";
+import { PRICE_DATA_LOG_REL, PriceRunLog } from "./price-run-log.mjs";
 
 async function main() {
   const symbols = await resolveSymbolList(process.argv);
   const from = yearsAgoIso(HISTORY_YEARS);
   const to = todayIso();
+  const runLog = new PriceRunLog("bulk");
 
   console.log(`Bulk FMP EOD: ${symbols.length} symbols, ${from} → ${to}\n`);
 
@@ -41,10 +43,12 @@ async function main() {
         );
       } else {
         empty++;
+        runLog.logEmpty(sym);
         console.log(`[${i + 1}/${symbols.length}] ${sym.padEnd(10)} no data`);
       }
     } catch (err) {
       failed++;
+      runLog.logError(sym, err);
       console.error(
         `[${i + 1}/${symbols.length}] ${sym.padEnd(10)} ERROR: ${err.message || err}`
       );
@@ -52,8 +56,12 @@ async function main() {
     await sleep(PRICE_DELAY_MS);
   }
 
+  await runLog.write();
+
   const sec = ((Date.now() - t0) / 1000).toFixed(1);
-  console.log(`\nDone in ${sec}s — ok: ${ok}, empty: ${empty}, failed: ${failed}`);
+  console.log(
+    `\nDone in ${sec}s — ok: ${ok}, empty: ${empty}, failed: ${failed}. Log: ${PRICE_DATA_LOG_REL}`
+  );
   if (failed > 0) process.exitCode = 1;
 }
 

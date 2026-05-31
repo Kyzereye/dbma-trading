@@ -89,8 +89,7 @@ export default function ScannerPanel({ activeSymbol, onSelectSymbol }) {
         {error ? <p className="error">{error}</p> : null}
         {!loading && !error && !data?.asOfDate ? (
           <p className="scanner-empty">
-            No scan data yet. Run{" "}
-            <code>npm run scan:nightly</code> after market close.
+            No scan data yet.
           </p>
         ) : null}
         {data?.asOfDate ? (
