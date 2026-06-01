@@ -10,6 +10,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { closePool, getPool } from "../backend/src/db.js";
+import { normalizeCompanyName } from "./normalizeCompanyName.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const STORED_SYMBOLS_PATH = path.join(__dirname, "..", "data", "stored-symbols.json");
@@ -84,7 +85,7 @@ function rowFromIndexJson(entry) {
 
   return {
     symbol,
-    company_name: String(entry.Name ?? entry.name ?? symbol).trim(),
+    company_name: normalizeCompanyName(entry.Name ?? entry.name ?? symbol),
     asset_type: "stock",
     exchange: null,
     is_active: 1,
@@ -106,7 +107,7 @@ function parseNasdaqListedCsv(text) {
 
     rows.push({
       symbol,
-      company_name: String(securityName ?? symbol).trim(),
+      company_name: normalizeCompanyName(securityName ?? symbol),
       asset_type,
       exchange: "NASDAQ",
       is_active: 1,

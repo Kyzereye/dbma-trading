@@ -210,7 +210,8 @@ export async function listScanDates(limit = 500) {
   return rows.map((r) => formatDateOnly(r.as_of_date));
 }
 
-export async function loadScanForDate(asOfDate) {
+export async function loadScanForDate(asOfDate, { topN = 25 } = {}) {
+  const lim = Math.min(100, Math.max(1, Math.floor(topN) || 25));
   const pool = getPool();
   const [rows] = await pool.execute(
     `
@@ -229,6 +230,8 @@ export async function loadScanForDate(asOfDate) {
   const mapped = rows.map(mapScanRow);
   const entries = mapped.filter((r) => r.lastSignal === "entry");
   const exits = mapped.filter((r) => r.lastSignal === "exit");
+  const inPosition = mapped.filter((r) => r.lastSignal === "open");
+  const byPnl = [...mapped].sort((a, b) => b.runningTotal - a.runningTotal);
 
   const [metaRows] = await pool.execute(
     `
@@ -245,5 +248,7 @@ export async function loadScanForDate(asOfDate) {
     total: mapped.length,
     entries,
     exits,
+    inPosition,
+    top: byPnl.slice(0, lim),
   };
 }

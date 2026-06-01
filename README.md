@@ -1,6 +1,6 @@
 # DBMA-trading
 
-Daily OHLC stock charts with EMA/SMA crossover signals, MA optimization, and a nightly universe scanner.
+Daily OHLC stock charts with EMA/SMA crossover signals, MA optimization, and a nightly symbol scan.
 
 ---
 
@@ -74,15 +74,13 @@ Tables created include: `stock_symbols`, `daily_stock_data`, `symbol_daily_scan`
 
 Run these steps from the project root in order.
 
-### Step A — Symbol universe
+### Step A — Symbol list
 
-US stocks and ETFs from FMP (`backend/.env` must include `FMP_API_KEY`):
+US stocks and ETFs (`npm run get-symbols` loads index constituents and Nasdaq listed symbols into `stock_symbols`):
 
 ```bash
 npm run get-symbols
 ```
-
-Uses `/actively-trading-list` plus `/profile` per symbol; upserts rows with `asset_type` `stock` or `etf` (US exchanges only).
 
 Optional: seed US stocks from the bundled file:
 
@@ -119,9 +117,9 @@ npm run get-daily-price-data -- --no-cleanup
 
 Reads active symbols from `stock_symbols`; stores OHLC in `daily_stock_data`. Shared logic: `scripts/get-stock-data.mjs`.
 
-### Step C — Nightly scanner (universe lists)
+### Step C — Nightly symbol scan
 
-Precompute optimized MA, signals, and running P/L per symbol into `symbol_daily_scan`:
+Precompute optimized MA, opens/closes, and running P/L per symbol into `symbol_daily_scan`:
 
 ```bash
 npm run scan:nightly
@@ -134,7 +132,7 @@ npm run scan:nightly -- --symbol AAPL
 npm run scan:nightly -- --limit 10
 ```
 
-Requires `daily_stock_data` for each symbol. Powers the **Nightly scanner** panel in the UI.
+Requires `daily_stock_data` for each symbol. Powers the **Signals** and **Daily log** tabs in the dashboard.
 
 ### Step D — Run the app
 
@@ -159,7 +157,7 @@ crontab -e
 
 ### Nightly pipeline (weekdays after market close)
 
-Ingest new bars, then run the universe scan:
+Ingest new bars, then run the symbol scan:
 
 ```cron
 0 18 * * 1-5 cd /path/to/DBMA-trading && /usr/bin/npm run pipeline:nightly >> /tmp/dbma-pipeline.log 2>&1
@@ -174,10 +172,16 @@ Ingest new bars, then run the universe scan:
 30 17 * * 1-5 cd /path/to/DBMA-trading && /usr/bin/npm run scan:nightly >> /tmp/dbma-scan.log 2>&1
 ```
 
-### Weekly symbol refresh
+### Weekly symbol list refresh
 
 ```cron
 0 12 * * 0 cd /path/to/DBMA-trading && /usr/bin/npm run get-symbols >> /tmp/dbma-symbols.log 2>&1
+```
+
+Optional — symbol renames and delistings (FMP):
+
+```cron
+0 13 * * 0 cd /path/to/DBMA-trading && /usr/bin/npm run sync-symbol-changes >> /tmp/dbma-symbol-changes.log 2>&1
 ```
 
 Verify:
@@ -199,7 +203,8 @@ Base URL in development: `http://localhost:3001`
 | GET | `/api/health` | Health check |
 | GET | `/api/symbols?q=AAP&limit=20` | Symbol autocomplete search |
 | GET | `/api/daily-stock-data?symbol=AAPL` | OHLC bars for one symbol |
-| GET | `/api/scanner?top=25` | Latest nightly scan (entries, exits, in position, top/bottom P/L) |
+| GET | `/api/scanner?top=25` | Latest symbol scan (opens, closes, top P/L) |
+| GET | `/api/scanner/day?date=YYYY-MM-DD` | Symbol scan for one date (opens, closes, in position, top P/L) |
 
 ### Examples
 
@@ -208,6 +213,7 @@ curl "http://localhost:3001/api/health"
 curl "http://localhost:3001/api/symbols?q=AA&limit=10"
 curl "http://localhost:3001/api/daily-stock-data?symbol=AAPL"
 curl "http://localhost:3001/api/scanner?top=25"
+curl "http://localhost:3001/api/scanner/day?date=2026-05-18"
 ```
 
 ---
@@ -218,7 +224,7 @@ Store your key in `backend/.env` as `FMP_API_KEY` only. Do not commit it.
 
 Base URL: `https://financialmodelingprep.com/stable`
 
-Symbol universe — four endpoints (append `?apikey=YOUR_KEY`):
+Symbol list endpoints (append `?apikey=YOUR_KEY`):
 
 | # | Purpose | Endpoint | Full URL |
 |---|---------|----------|----------|
@@ -238,9 +244,10 @@ Symbol universe — four endpoints (append `?apikey=YOUR_KEY`):
 | `npm run dev` | Backend + frontend dev servers |
 | `npm run get-bulk-price-data` | FMP bulk EOD (~3 years) |
 | `npm run get-daily-price-data` | FMP nightly EOD update |
-| `npm run scan:nightly` | Universe MA scan → `symbol_daily_scan` |
+| `npm run scan:nightly` | Nightly symbol scan → `symbol_daily_scan` |
 | `npm run pipeline:nightly` | `get-daily-price-data` then `scan:nightly` |
-| `npm run get-symbols` | FMP US stocks/ETFs → `stock_symbols` |
+| `npm run get-symbols` | Refresh symbol list → `stock_symbols` |
+| `npm run sync-symbol-changes` | FMP renames/delistings → `stock_symbols` + `data/symbol-changes.log` |
 | `npm run optimize:ma -- AAPL` | CLI MA optimization for one symbol |
 
 ---
@@ -251,7 +258,3 @@ Symbol universe — four endpoints (append `?apikey=YOUR_KEY`):
 |------|-----|
 | `sql_queries/sql_queries.sql` | Full schema (fresh install) |
 | `sql_queries/combined_stocks.sql` | Seed `stock_symbols` |
-
-https://financialmodelingprep.com/stable/profile?symbol=AAPL&apikey=dhJ8r9XEYsJWIiiBa2uvmrivcPdW8zLD
-
-https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=AAPL&from=1990-08-15&to=2025-12-15&apikey=dhJ8r9XEYsJWIiiBa2uvmrivcPdW8zLD# dbma-trading

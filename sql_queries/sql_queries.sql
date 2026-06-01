@@ -24,7 +24,7 @@ INSERT IGNORE INTO roles (role_name, display_name, description) VALUES
 ('enterprise', 'Enterprise', 'Advanced features with priority support'),
 ('admin', 'Admin', 'Full system administration access');
 
--- Symbol universe (stocks, ETFs, crypto, forex). Stocks/ETFs: npm run get-symbols.
+-- Symbol list (stocks, ETFs, crypto, forex). Stocks/ETFs: npm run get-symbols.
 -- Forex/crypto: sql_queries/forex_and_crypto_symbols.sql. Optional stocks: combined_stocks.sql.
 CREATE TABLE IF NOT EXISTS stock_symbols (
     id INT AUTO_INCREMENT PRIMARY KEY,

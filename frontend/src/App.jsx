@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AppHeader from "./AppHeader.jsx";
 import CandlestickChart from "./CandlestickChart.jsx";
 import DailySignals from "./DailySignals.jsx";
+import DashboardTabs from "./DashboardTabs.jsx";
 import { MA_FAST_COLOR, MA_SLOW_COLOR } from "./chartColors.js";
 import { formatPct, optimizeMa } from "./optimizeMa.js";
 import ScannerPanel from "./ScannerPanel.jsx";
 import SymbolAutocomplete from "./SymbolAutocomplete.jsx";
 import TradingRules from "./TradingRules.jsx";
+import SymbolChangesTab from "./SymbolChangesTab.jsx";
 import { ENTRY_CONFIRM, simulateTrades } from "./tradeSignals.js";
 
 const DEFAULT_SYMBOL = "AAPL";
@@ -87,7 +89,8 @@ function enrichTradesForTable(trades) {
 }
 
 export default function App() {
-  const [page, setPage] = useState("chart");
+  const [page, setPage] = useState("app");
+  const [tab, setTab] = useState("signals");
   const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
   const [input, setInput] = useState(DEFAULT_SYMBOL);
   const [loading, setLoading] = useState(false);
@@ -136,12 +139,14 @@ export default function App() {
     applyMaPeriods(
       clampMaConfig(optFast, optSlow, "ema", { fast: optFast, slow: optSlow, maType: "ema" })
     );
-    setPage("chart");
+    setPage("app");
+    setTab("chart");
     load(sym);
   }
 
-  function onSelectFromDaily(sym, optFast, optSlow) {
-    onSelectFromScanner(sym, optFast, optSlow);
+  function goHome() {
+    setPage("app");
+    setTab("signals");
   }
 
   function applyMaPeriods(next) {
@@ -193,15 +198,25 @@ export default function App() {
     <div className="app-shell">
       <AppHeader
         page={page}
-        onGoChart={() => setPage("chart")}
+        onGoHome={goHome}
         onGoRules={() => setPage("rules")}
-        onGoDaily={() => setPage("daily")}
       />
       {page === "rules" ? (
         <TradingRules />
-      ) : page === "daily" ? (
-        <DailySignals onSelectSymbol={onSelectFromDaily} />
       ) : (
+        <>
+          <DashboardTabs tab={tab} onChange={setTab} />
+          {tab === "signals" ? (
+            <ScannerPanel
+              activeSymbol={symbol}
+              onSelectSymbol={onSelectFromScanner}
+            />
+          ) : null}
+          {tab === "daily" ? (
+            <DailySignals onSelectSymbol={onSelectFromScanner} />
+          ) : null}
+          {tab === "symbolchanges" ? <SymbolChangesTab /> : null}
+          {tab === "chart" ? (
     <div className="app-layout">
       <aside className="sidebar">
         <h1 className="sidebar-title">DBMA</h1>
@@ -321,11 +336,6 @@ export default function App() {
             )}
           </div>
 
-          <ScannerPanel
-            activeSymbol={symbol}
-            onSelectSymbol={onSelectFromScanner}
-          />
-
           {series.length && trades.length ? (
             <details className="expand-panel">
               <summary>
@@ -431,6 +441,8 @@ export default function App() {
         ) : null}
       </main>
     </div>
+          ) : null}
+        </>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { formatPct } from "./optimizeMa.js";
+import { SortableTh, useScanTableSort } from "./scanTableSort.jsx";
 
 function formatPnl(v) {
   const sign = v >= 0 ? "+" : "";
@@ -7,6 +8,8 @@ function formatPnl(v) {
 }
 
 function ScanTable({ rows, onSelect, emptyMessage, activeSymbol }) {
+  const { sortedRows, sortKey, sortDir, toggleSort } = useScanTableSort(rows);
+
   if (!rows.length) {
     return <p className="scanner-empty">{emptyMessage}</p>;
   }
@@ -15,14 +18,28 @@ function ScanTable({ rows, onSelect, emptyMessage, activeSymbol }) {
       <table className="scanner-table">
         <thead>
           <tr>
-            <th>Symbol</th>
-            <th>MA</th>
-            <th className="scanner-col-num">P/L</th>
-            <th>Min</th>
+            <SortableTh col="symbol" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
+              Symbol
+            </SortableTh>
+            <SortableTh col="ma" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
+              MA
+            </SortableTh>
+            <SortableTh
+              col="pnl"
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              className="scanner-col-num"
+            >
+              P/L
+            </SortableTh>
+            <SortableTh col="min" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
+              Min
+            </SortableTh>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {sortedRows.map((row) => (
             <tr
               key={row.symbol}
               className={
@@ -79,69 +96,69 @@ export default function ScannerPanel({ activeSymbol, onSelectSymbol }) {
   };
 
   return (
-    <details className="expand-panel scanner-panel" open>
-      <summary>
-        Nightly scanner
-        {data?.asOfDate ? ` — ${data.asOfDate}` : ""}
-        {loading ? " (loading…)" : ""}
-      </summary>
-      <div className="expand-body">
-        {error ? <p className="error">{error}</p> : null}
-        {!loading && !error && !data?.asOfDate ? (
-          <p className="scanner-empty">
-            No scan data yet.
-          </p>
-        ) : null}
+    <div className="dashboard-tab-page">
+      <h1 className="dashboard-tab-title">
+        Signals
         {data?.asOfDate ? (
-          <>
-            <p className="scanner-meta">
-              {data.total} symbols · optimized EMA per symbol · as of{" "}
-              {data.asOfDate}
-              <button
-                type="button"
-                className="scanner-refresh"
-                onClick={fetchScanner}
-                disabled={loading}
-              >
-                Refresh
-              </button>
-            </p>
-            <div className="scanner-grid">
-              <section>
-                <h3 className="scanner-heading">
-                  Recent opens ({data.entries.length})
-                </h3>
-                <ScanTable
-                  rows={data.entries}
-                  onSelect={handleSelect}
-                  activeSymbol={activeSymbol}
-                  emptyMessage="No opens on the latest bar."
-                />
-              </section>
-              <section>
-                <h3 className="scanner-heading">
-                  Recent closes ({data.exits.length})
-                </h3>
-                <ScanTable
-                  rows={data.exits}
-                  onSelect={handleSelect}
-                  activeSymbol={activeSymbol}
-                  emptyMessage="No closes on the latest bar."
-                />
-              </section>
-              <section>
-                <h3 className="scanner-heading">Top running P/L</h3>
-                <ScanTable
-                  rows={data.top}
-                  onSelect={handleSelect}
-                  activeSymbol={activeSymbol}
-                  emptyMessage="No ranked symbols."
-                />
-              </section>
-            </div>
-          </>
+          <span className="dashboard-tab-subtitle"> — {data.asOfDate}</span>
         ) : null}
-      </div>
-    </details>
+        {loading ? (
+          <span className="dashboard-tab-subtitle"> (loading…)</span>
+        ) : null}
+      </h1>
+      {error ? <p className="error">{error}</p> : null}
+      {!loading && !error && !data?.asOfDate ? (
+        <p className="scanner-empty">No scan data yet.</p>
+      ) : null}
+      {data?.asOfDate ? (
+        <>
+          <p className="scanner-meta">
+            {data.total} symbols · optimized EMA per symbol · as of{" "}
+            {data.asOfDate}
+            <button
+              type="button"
+              className="scanner-refresh"
+              onClick={fetchScanner}
+              disabled={loading}
+            >
+              Refresh
+            </button>
+          </p>
+          <div className="scanner-grid">
+            <section>
+              <h3 className="scanner-heading">
+                Recent opens ({data.entries.length})
+              </h3>
+              <ScanTable
+                rows={data.entries}
+                onSelect={handleSelect}
+                activeSymbol={activeSymbol}
+                emptyMessage="No opens on the latest bar."
+              />
+            </section>
+            <section>
+              <h3 className="scanner-heading">
+                Recent closes ({data.exits.length})
+              </h3>
+              <ScanTable
+                rows={data.exits}
+                onSelect={handleSelect}
+                activeSymbol={activeSymbol}
+                emptyMessage="No closes on the latest bar."
+              />
+            </section>
+            <section>
+              <h3 className="scanner-heading">Top running P/L</h3>
+              <ScanTable
+                rows={data.top}
+                onSelect={handleSelect}
+                activeSymbol={activeSymbol}
+                emptyMessage="No ranked symbols."
+              />
+            </section>
+          </div>
+        </>
+      ) : null}
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatPct } from "./optimizeMa.js";
+import { SortableTh, useScanTableSort } from "./scanTableSort.jsx";
 
 function formatPnl(v) {
   const sign = v >= 0 ? "+" : "";
@@ -7,22 +8,41 @@ function formatPnl(v) {
 }
 
 function SignalTable({ rows, kind, onSelect, emptyMessage }) {
+  const { sortedRows, sortKey, sortDir, toggleSort } = useScanTableSort(rows);
+
   if (!rows.length) {
     return <p className="scanner-empty">{emptyMessage}</p>;
   }
   return (
-    <table className="scanner-table">
+    <div className="scanner-scroll">
+      <table className="scanner-table">
         <thead>
           <tr>
-            <th>Symbol</th>
-            <th>Company</th>
-            <th>MA</th>
-            <th className="scanner-col-num">P/L</th>
-            <th>Min</th>
+            <SortableTh col="symbol" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
+              Symbol
+            </SortableTh>
+            <SortableTh col="company" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
+              Company
+            </SortableTh>
+            <SortableTh col="ma" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
+              MA
+            </SortableTh>
+            <SortableTh
+              col="pnl"
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              className="scanner-col-num"
+            >
+              P/L
+            </SortableTh>
+            <SortableTh col="min" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
+              Min
+            </SortableTh>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {sortedRows.map((row) => (
             <tr
               key={`${kind}-${row.symbol}`}
               onClick={() => onSelect?.(row)}
@@ -41,6 +61,7 @@ function SignalTable({ rows, kind, onSelect, emptyMessage }) {
           ))}
         </tbody>
       </table>
+    </div>
   );
 }
 
@@ -63,7 +84,7 @@ export default function DailySignals({ onSelectSymbol }) {
     setLoading(true);
     setError("");
     try {
-      const q = new URLSearchParams();
+      const q = new URLSearchParams({ top: "25" });
       if (selectedDate) q.set("date", selectedDate);
       const res = await fetch(`/api/scanner/day?${q}`);
       const body = await res.json().catch(() => ({}));
@@ -104,12 +125,8 @@ export default function DailySignals({ onSelectSymbol }) {
     !loading && !error && date && data?.hasScan === false;
 
   return (
-    <div className="daily-signals-page">
-      <h1 className="daily-signals-title">Daily opens &amp; closes</h1>
-      <p className="daily-signals-intro">
-        MA crossover signals from the nightly scanner (optimized EMA per symbol,
-        single close above fast).
-      </p>
+    <div className="dashboard-tab-page">
+      <h1 className="dashboard-tab-title">Daily log</h1>
 
       {hasScanDates ? (
         <label className="daily-signals-date">
@@ -143,7 +160,8 @@ export default function DailySignals({ onSelectSymbol }) {
         <>
           <p className="scanner-meta">
             {data.total} symbols scanned · {data.entries.length} opens ·{" "}
-            {data.exits.length} closes
+            {data.exits.length} closes · {data.inPosition?.length ?? 0} in
+            position
             {data.computedAt ? (
               <>
                 {" "}
@@ -155,7 +173,7 @@ export default function DailySignals({ onSelectSymbol }) {
               </>
             ) : null}
           </p>
-          <div className="daily-signals-grid">
+          <div className="scanner-grid daily-log-grid">
             <section>
               <h2 className="scanner-heading">
                 Opens ({data.entries.length})
@@ -174,6 +192,26 @@ export default function DailySignals({ onSelectSymbol }) {
                 kind="exit"
                 onSelect={handleSelect}
                 emptyMessage="No closes on this date."
+              />
+            </section>
+            <section>
+              <h2 className="scanner-heading">
+                In position ({data.inPosition?.length ?? 0})
+              </h2>
+              <SignalTable
+                rows={data.inPosition ?? []}
+                kind="open"
+                onSelect={handleSelect}
+                emptyMessage="No open positions on this date."
+              />
+            </section>
+            <section>
+              <h2 className="scanner-heading">Top running P/L</h2>
+              <SignalTable
+                rows={data.top ?? []}
+                kind="top"
+                onSelect={handleSelect}
+                emptyMessage="No ranked symbols."
               />
             </section>
           </div>

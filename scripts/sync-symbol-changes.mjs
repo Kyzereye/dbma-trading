@@ -9,6 +9,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { closePool, getPool } from "../backend/src/db.js";
+import { normalizeCompanyName } from "./normalizeCompanyName.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const SYMBOL_CHANGES_LOG_PATH = path.join(
@@ -110,7 +111,9 @@ async function applySymbolChange(oldSymbol, newSymbol, companyName) {
     oldSymbol,
   ]);
 
-  const name = String(companyName ?? existingNew?.company_name ?? old.company_name).trim();
+  const name = normalizeCompanyName(
+    companyName ?? existingNew?.company_name ?? old.company_name
+  );
   const exchange = existingNew?.exchange ?? old.exchange;
 
   await pool.execute(

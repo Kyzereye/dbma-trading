@@ -85,16 +85,13 @@ app.get("/api/scanner", async (req, res) => {
         total: 0,
         entries: [],
         exits: [],
-        inPosition: [],
         top: [],
-        bottom: [],
       });
       return;
     }
 
     const entries = rows.filter((r) => r.lastSignal === "entry");
     const exits = rows.filter((r) => r.lastSignal === "exit");
-    const inPosition = rows.filter((r) => r.lastSignal === "open");
     const byPnl = [...rows].sort((a, b) => b.runningTotal - a.runningTotal);
 
     res.json({
@@ -103,9 +100,7 @@ app.get("/api/scanner", async (req, res) => {
       total: rows.length,
       entries,
       exits,
-      inPosition,
       top: byPnl.slice(0, topN),
-      bottom: byPnl.slice(-topN).reverse(),
     });
   } catch (err) {
     console.error(err);
@@ -116,6 +111,11 @@ app.get("/api/scanner", async (req, res) => {
 });
 
 app.get("/api/scanner/day", async (req, res) => {
+  const topN = Math.min(
+    100,
+    Math.max(1, Number.parseInt(String(req.query.top ?? "25"), 10) || 25)
+  );
+
   try {
     const availableDates = await listScanDates();
     if (!availableDates.length) {
@@ -126,6 +126,8 @@ app.get("/api/scanner/day", async (req, res) => {
         total: 0,
         entries: [],
         exits: [],
+        inPosition: [],
+        top: [],
       });
       return;
     }
@@ -144,11 +146,13 @@ app.get("/api/scanner/day", async (req, res) => {
         total: 0,
         entries: [],
         exits: [],
+        inPosition: [],
+        top: [],
       });
       return;
     }
 
-    const scan = await loadScanForDate(date);
+    const scan = await loadScanForDate(date, { topN });
     res.json({
       date: scan.asOfDate,
       hasScan: true,
@@ -157,6 +161,8 @@ app.get("/api/scanner/day", async (req, res) => {
       total: scan.total,
       entries: scan.entries,
       exits: scan.exits,
+      inPosition: scan.inPosition,
+      top: scan.top,
     });
   } catch (err) {
     console.error(err);
