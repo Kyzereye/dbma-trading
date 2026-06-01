@@ -3,14 +3,20 @@ export default function TradingRules() {
     <div className="rules-page">
       <h1 className="rules-title">Open &amp; close rules</h1>
       <p className="rules-intro">
+        These rules are for <strong>swing trading on daily bars</strong>: each open
+        and close is evaluated at the <strong>end-of-day close</strong>, not on
+        intraday ticks. Holds are meant to last multiple days or longer, not
+        minutes or hours.
+      </p>
+      <p className="rules-intro">
         Chart signals use your MA settings and open-confirm mode. The nightly
-        scanner uses one close above fast (single confirm) with optimized periods
-        per symbol.
+        symbol scan uses one close above fast (single confirm) with optimized
+        periods per symbol.
       </p>
 
       <section className="rules-section">
         <h2>Open</h2>
-        <p>All of the following must be true on the open bar&apos;s daily close:</p>
+        <p>All of the following must be true on the daily close of the open bar:</p>
         <ul>
           <li>Not already in a position</li>
           <li>Close is above the <strong>slow</strong> moving average</li>
@@ -65,8 +71,8 @@ export default function TradingRules() {
         <h2>Optimization</h2>
         <p>
           For each symbol, fast/slow periods can be chosen from the optimizer panel
-          (top pairs by minimum of 3-year and 1-year return). The nightly scanner
-          stores the best pair per symbol in the database.
+          (top pairs by minimum of 3-year and 1-year return). The nightly symbol
+          scan stores the best pair per symbol in the database.
         </p>
       </section>
     </div>
