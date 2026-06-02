@@ -1,8 +1,8 @@
 const TABS = [
+  { id: "chart", label: "Chart" },
   { id: "signals", label: "Signals" },
   { id: "daily", label: "Daily log" },
   { id: "symbolchanges", label: "Symbol Changes" },
-  { id: "chart", label: "Chart" },
 ];
 
 export default function DashboardTabs({ tab, onChange }) {

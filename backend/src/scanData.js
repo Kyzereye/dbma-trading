@@ -105,9 +105,9 @@ export async function upsertScanRow(symbol, scan) {
     `
     INSERT INTO symbol_daily_scan (
       symbol, as_of_date, opt_fast, opt_slow, opt_used_default,
-      opt_r3y, opt_r1y, opt_min_return, running_total,
+      opt_r3y, opt_r1y, opt_min_return, running_total, running_total_pct,
       last_signal, signal_date, bar_count
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       opt_fast = VALUES(opt_fast),
       opt_slow = VALUES(opt_slow),
@@ -116,6 +116,7 @@ export async function upsertScanRow(symbol, scan) {
       opt_r1y = VALUES(opt_r1y),
       opt_min_return = VALUES(opt_min_return),
       running_total = VALUES(running_total),
+      running_total_pct = VALUES(running_total_pct),
       last_signal = VALUES(last_signal),
       signal_date = VALUES(signal_date),
       bar_count = VALUES(bar_count),
@@ -131,6 +132,7 @@ export async function upsertScanRow(symbol, scan) {
       scan.optR1y,
       scan.optMinReturn,
       scan.runningTotal,
+      scan.runningTotalPct,
       scan.lastSignal,
       scan.signalDate,
       scan.barCount,
@@ -170,6 +172,8 @@ function mapScanRow(row) {
     optR1y: row.opt_r1y != null ? Number(row.opt_r1y) : null,
     optMinReturn: row.opt_min_return != null ? Number(row.opt_min_return) : null,
     runningTotal: Number(row.running_total),
+    runningTotalPct:
+      row.running_total_pct != null ? Number(row.running_total_pct) : null,
     lastSignal: row.last_signal,
     signalDate: formatDateOnly(row.signal_date),
     barCount: Number(row.bar_count),
@@ -184,7 +188,7 @@ export async function loadScanForLatestDate() {
   const [rows] = await pool.execute(
     `
     SELECT symbol, as_of_date, opt_fast, opt_slow, opt_used_default,
-           opt_r3y, opt_r1y, opt_min_return, running_total,
+           opt_r3y, opt_r1y, opt_min_return, running_total, running_total_pct,
            last_signal, signal_date, bar_count
     FROM symbol_daily_scan
     WHERE as_of_date = ?
@@ -216,8 +220,9 @@ export async function loadScanForDate(asOfDate, { topN = 25 } = {}) {
   const [rows] = await pool.execute(
     `
     SELECT scan.symbol, scan.as_of_date, scan.opt_fast, scan.opt_slow,
-           scan.opt_used_default, scan.opt_r3y, scan.opt_r1y, scan.opt_min_return,
-           scan.running_total, scan.last_signal, scan.signal_date, scan.bar_count,
+           scan.           opt_used_default, scan.opt_r3y, scan.opt_r1y, scan.opt_min_return,
+           scan.running_total, scan.running_total_pct,
+           scan.last_signal, scan.signal_date, scan.bar_count,
            ss.company_name
     FROM symbol_daily_scan scan
     LEFT JOIN stock_symbols ss ON ss.symbol = scan.symbol

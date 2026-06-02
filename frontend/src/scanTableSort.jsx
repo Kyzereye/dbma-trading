@@ -10,9 +10,9 @@ function compareScanRows(a, b, key) {
       return a.optFast - b.optFast || a.optSlow - b.optSlow;
     case "pnl":
       return a.runningTotal - b.runningTotal;
-    case "min": {
-      const av = a.optMinReturn;
-      const bv = b.optMinReturn;
+    case "pnlPct": {
+      const av = a.runningTotalPct;
+      const bv = b.runningTotalPct;
       if (av == null && bv == null) return 0;
       if (av == null) return 1;
       if (bv == null) return -1;
@@ -24,7 +24,7 @@ function compareScanRows(a, b, key) {
 }
 
 function defaultSortDir(key) {
-  return key === "pnl" || key === "min" ? "desc" : "asc";
+  return key === "pnl" || key === "pnlPct" ? "desc" : "asc";
 }
 
 export function useScanTableSort(rows, initialKey = "symbol") {

@@ -24,9 +24,6 @@ function SignalTable({ rows, kind, onSelect, emptyMessage }) {
             <SortableTh col="company" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
               Company
             </SortableTh>
-            <SortableTh col="ma" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
-              MA
-            </SortableTh>
             <SortableTh
               col="pnl"
               sortKey={sortKey}
@@ -36,8 +33,14 @@ function SignalTable({ rows, kind, onSelect, emptyMessage }) {
             >
               P/L
             </SortableTh>
-            <SortableTh col="min" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
-              Min
+            <SortableTh
+              col="pnlPct"
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              className="scanner-col-num"
+            >
+              P/L%
             </SortableTh>
           </tr>
         </thead>
@@ -52,11 +55,8 @@ function SignalTable({ rows, kind, onSelect, emptyMessage }) {
               <td className="daily-signals-company">
                 {row.companyName ?? "—"}
               </td>
-              <td>
-                {row.optFast}/{row.optSlow}
-              </td>
               <td className="scanner-col-num">{formatPnl(row.runningTotal)}</td>
-              <td>{formatPct(row.optMinReturn)}</td>
+              <td className="scanner-col-num">{formatPct(row.runningTotalPct)}</td>
             </tr>
           ))}
         </tbody>

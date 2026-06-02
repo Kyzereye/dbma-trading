@@ -216,6 +216,7 @@ CREATE TABLE IF NOT EXISTS symbol_daily_scan (
     opt_r1y DECIMAL(10, 4) NULL,
     opt_min_return DECIMAL(10, 4) NULL,
     running_total DECIMAL(12, 4) NOT NULL,
+    running_total_pct DECIMAL(10, 4) NULL,
     last_signal ENUM('entry', 'exit', 'open', 'none') NOT NULL DEFAULT 'none',
     signal_date DATE NULL,
     bar_count INT UNSIGNED NOT NULL,
@@ -225,3 +226,6 @@ CREATE TABLE IF NOT EXISTS symbol_daily_scan (
     KEY idx_asof_signal (as_of_date, last_signal),
     KEY idx_asof_running (as_of_date, running_total)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Existing DB: add P/L% column after deploy
+-- ALTER TABLE symbol_daily_scan ADD COLUMN running_total_pct DECIMAL(10, 4) NULL AFTER running_total;

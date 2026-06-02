@@ -90,7 +90,7 @@ function enrichTradesForTable(trades) {
 
 export default function App() {
   const [page, setPage] = useState("app");
-  const [tab, setTab] = useState("signals");
+  const [tab, setTab] = useState("chart");
   const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
   const [input, setInput] = useState(DEFAULT_SYMBOL);
   const [loading, setLoading] = useState(false);

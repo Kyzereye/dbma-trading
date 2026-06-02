@@ -13,6 +13,17 @@ export function runningTotalFromTrades(trades) {
   return total;
 }
 
+/** Compounded percent return from closed trades (same trades as runningTotal). */
+export function runningTotalPctFromTrades(trades) {
+  const closed = trades.filter((t) => !t.open);
+  if (!closed.length) return null;
+  let factor = 1;
+  for (const t of closed) {
+    factor *= t.exitPrice / t.entryPrice;
+  }
+  return (factor - 1) * 100;
+}
+
 /**
  * Classify the most recent signal relative to the latest bar date.
  * entry / exit — signal on the last bar; open — in trade from an earlier bar.
@@ -59,6 +70,7 @@ export function scanSymbol(bars) {
 
   const { trades, markers } = simulateTrades(bars, fast, slow, "ema");
   const runningTotal = runningTotalFromTrades(trades);
+  const runningTotalPct = runningTotalPctFromTrades(trades);
   const { lastSignal, signalDate } = classifyLastSignal(
     trades,
     markers,
@@ -74,6 +86,7 @@ export function scanSymbol(bars) {
     optR1y: best?.r1y ?? null,
     optMinReturn: best?.minReturn ?? null,
     runningTotal,
+    runningTotalPct,
     lastSignal,
     signalDate,
     barCount: bars.length,
