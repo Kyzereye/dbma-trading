@@ -613,6 +613,174 @@ button:disabled {
   color: var(--muted);
 }
 
+.user-dashboard {
+  max-width: 1200px;
+}
+
+.user-dash-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.user-dash-lead {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 36rem;
+}
+
+.user-dash-scan-meta {
+  margin: 0;
+}
+
+.user-dash-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .user-dash-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.user-dash-settings {
+  padding: 1rem 1.1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.user-dash-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.user-dash-fieldset {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: none;
+}
+
+.user-dash-fieldset legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.user-dash-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
+.user-dash-price-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.user-dash-price-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  width: 100%;
+}
+
+.user-dash-price-row input {
+  font: inherit;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.user-dash-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.user-dash-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.user-dash-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.user-dash-panel {
+  padding: 1rem 1.1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.user-dash-table tbody tr {
+  cursor: pointer;
+}
+
+.user-dash-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.user-dash-badge-in {
+  background: rgba(106, 191, 105, 0.2);
+  color: var(--accent);
+}
+
+.user-dash-badge-out {
+  background: rgba(139, 155, 171, 0.15);
+  color: var(--muted);
+}
+
+.user-dash-badge-open {
+  background: rgba(106, 191, 105, 0.15);
+  color: #8fd88e;
+}
+
+.user-dash-badge-close {
+  background: rgba(230, 140, 90, 0.15);
+  color: #e6a85a;
+}
+
+.user-dash-badge-muted {
+  background: rgba(139, 155, 171, 0.1);
+  color: var(--muted);
+}
+
 .daily-signals-date {
   display: inline-flex;
   align-items: center;

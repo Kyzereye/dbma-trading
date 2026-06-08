@@ -1,4 +1,4 @@
-USE `dbma-trading`;
+USE `StockPxLabs`;
 
 -- Disable foreign key checks so tables can be dropped in any order
 SET FOREIGN_KEY_CHECKS = 0;
@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS trading_signals (
     INDEX idx_signal_direction (signal_direction)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Nightly MA scan results (npm run scan:nightly → feeds /api/scanner UI)
+-- Per-symbol analysis results (npm run analyze-symbols → feeds /api/scanner UI)
 CREATE TABLE IF NOT EXISTS symbol_daily_scan (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     symbol VARCHAR(32) NOT NULL,

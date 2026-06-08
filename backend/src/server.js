@@ -8,6 +8,8 @@ import {
   listScanDates,
   loadScanForDate,
   loadScanForLatestDate,
+  loadTopPerformers,
+  parseTopPerformerQuery,
   searchSymbols,
 } from "./scanData.js";
 
@@ -66,6 +68,19 @@ app.get("/api/symbols", async (req, res) => {
     console.error(err);
     res.status(500).json({
       error: err.message || "Symbol search failed",
+    });
+  }
+});
+
+app.get("/api/dashboard/top-performers", async (req, res) => {
+  try {
+    const filters = parseTopPerformerQuery(req.query);
+    const result = await loadTopPerformers(filters);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: err.message || "Top performers query failed",
     });
   }
 });

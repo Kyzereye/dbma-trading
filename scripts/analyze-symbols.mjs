@@ -1,9 +1,9 @@
 /**
- * Nightly scan: optimize MA per symbol, detect entry/exit, store running totals.
+ * Analyze each symbol: optimized crossover, opens/closes, running totals → symbol_daily_scan.
  *
- *   npm run scan:nightly
- *   npm run scan:nightly -- --symbol AAPL   (single symbol)
- *   npm run scan:nightly -- --limit 10      (first N symbols, for testing)
+ *   npm run analyze-symbols
+ *   npm run analyze-symbols -- --symbol AAPL
+ *   npm run analyze-symbols -- --limit 10
  */
 
 import { scanSymbol } from "../frontend/src/scanSymbol.js";
@@ -35,14 +35,14 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function scanOne(sym) {
+async function analyzeOne(sym) {
   const bars = await loadBarsForSymbol(sym);
   if (!bars.length) {
     return { sym, status: "skip", reason: "no bars" };
   }
   const result = scanSymbol(bars);
   if (!result) {
-    return { sym, status: "skip", reason: "scan failed" };
+    return { sym, status: "skip", reason: "analyze failed" };
   }
   await upsertScanRow(sym, result);
   return { sym, status: "ok", ...result };
@@ -53,9 +53,7 @@ async function main() {
 
   let symbols = symbol ? [symbol] : await listScannableSymbols();
   if (!symbols.length) {
-    console.error(
-      "No scannable symbols (active stock/etf rows in stock_symbols)."
-    );
+    console.error("No symbols to analyze in stock_symbols.");
     process.exitCode = 1;
     return;
   }
@@ -63,9 +61,7 @@ async function main() {
     symbols = symbols.slice(0, limit);
   }
 
-  console.log(
-    `Scanning ${symbols.length} active stock/ETF symbol(s) (requires daily_stock_data)…\n`
-  );
+  console.log(`Analyzing ${symbols.length} symbol(s)…\n`);
 
   let ok = 0;
   let skipped = 0;
@@ -74,7 +70,7 @@ async function main() {
 
   for (const sym of symbols) {
     try {
-      const r = await scanOne(sym);
+      const r = await analyzeOne(sym);
       if (r.status === "ok") {
         ok++;
         const sig =

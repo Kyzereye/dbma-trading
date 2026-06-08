@@ -9,6 +9,7 @@ import ScannerPanel from "./ScannerPanel.jsx";
 import SymbolAutocomplete from "./SymbolAutocomplete.jsx";
 import TradingRules from "./TradingRules.jsx";
 import SymbolChangesTab from "./SymbolChangesTab.jsx";
+import UserDashboardTab from "./UserDashboardTab.jsx";
 import { ENTRY_CONFIRM, simulateTrades } from "./tradeSignals.js";
 
 const DEFAULT_SYMBOL = "AAPL";
@@ -90,7 +91,7 @@ function enrichTradesForTable(trades) {
 
 export default function App() {
   const [page, setPage] = useState("app");
-  const [tab, setTab] = useState("chart");
+  const [tab, setTab] = useState("home");
   const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
   const [input, setInput] = useState(DEFAULT_SYMBOL);
   const [loading, setLoading] = useState(false);
@@ -146,7 +147,7 @@ export default function App() {
 
   function goHome() {
     setPage("app");
-    setTab("signals");
+    setTab("home");
   }
 
   function applyMaPeriods(next) {
@@ -206,6 +207,9 @@ export default function App() {
       ) : (
         <>
           <DashboardTabs tab={tab} onChange={setTab} />
+          {tab === "home" ? (
+            <UserDashboardTab onSelectSymbol={onSelectFromScanner} />
+          ) : null}
           {tab === "signals" ? (
             <ScannerPanel
               activeSymbol={symbol}

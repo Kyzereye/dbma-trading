@@ -46,7 +46,7 @@ export async function listScannableSymbols() {
     const [rows] = await pool.execute(
       `
       SELECT symbol FROM stock_symbols
-      WHERE is_active = 1 AND asset_type IN ('stock', 'etf')
+      WHERE is_active = 1
       ORDER BY symbol ASC
       `
     );
@@ -164,6 +164,8 @@ function mapScanRow(row) {
     companyName: row.company_name
       ? String(row.company_name).trim() || null
       : null,
+    assetType: row.asset_type ? String(row.asset_type) : "stock",
+    price: row.last_close != null ? Number(row.last_close) : null,
     asOfDate: formatDateOnly(row.as_of_date),
     optFast: Number(row.opt_fast),
     optSlow: Number(row.opt_slow),
@@ -180,6 +182,84 @@ function mapScanRow(row) {
   };
 }
 
+const SCAN_ROW_SELECT = `
+  SELECT scan.symbol, scan.as_of_date, scan.opt_fast, scan.opt_slow,
+         scan.opt_used_default, scan.opt_r3y, scan.opt_r1y, scan.opt_min_return,
+         scan.running_total, scan.running_total_pct,
+         scan.last_signal, scan.signal_date, scan.bar_count,
+         ss.company_name, ss.asset_type, d.close AS last_close
+  FROM symbol_daily_scan scan
+  LEFT JOIN stock_symbols ss ON ss.symbol = scan.symbol
+  LEFT JOIN daily_stock_data d ON d.symbol_id = ss.id AND d.date = scan.as_of_date
+`;
+
+export function applyScanFilters(
+  rows,
+  { priceMin = null, priceMax = null, assetTypes = null } = {}
+) {
+  return rows.filter((row) => {
+    if (assetTypes != null && !assetTypes.includes(row.assetType)) {
+      return false;
+    }
+    const priceFilter =
+      row.assetType !== "forex" && row.assetType !== "crypto";
+    if (priceFilter && priceMin != null) {
+      if (row.price == null || row.price < priceMin) return false;
+    }
+    if (priceFilter && priceMax != null) {
+      if (row.price == null || row.price > priceMax) return false;
+    }
+    return true;
+  });
+}
+
+export function parseTopPerformerQuery(query) {
+  const topN = Math.min(
+    100,
+    Math.max(1, Number.parseInt(String(query.top ?? "10"), 10) || 10)
+  );
+  const priceMinRaw = query.priceMin;
+  const priceMaxRaw = query.priceMax;
+  const priceMin =
+    priceMinRaw !== undefined && priceMinRaw !== ""
+      ? Number(priceMinRaw)
+      : null;
+  const priceMax =
+    priceMaxRaw !== undefined && priceMaxRaw !== ""
+      ? Number(priceMaxRaw)
+      : null;
+  const assetTypes =
+    query.assetTypes !== undefined
+      ? String(query.assetTypes)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : null;
+
+  return {
+    topN,
+    priceMin: Number.isFinite(priceMin) ? priceMin : null,
+    priceMax: Number.isFinite(priceMax) ? priceMax : null,
+    assetTypes,
+  };
+}
+
+export async function loadTopPerformers(filters) {
+  const { meta, rows } = await loadScanForLatestDate();
+  if (!meta) {
+    return { asOfDate: null, computedAt: null, top: [] };
+  }
+
+  const filtered = applyScanFilters(rows, filters);
+  const byPnl = [...filtered].sort((a, b) => b.runningTotal - a.runningTotal);
+
+  return {
+    asOfDate: meta.asOfDate,
+    computedAt: meta.computedAt,
+    top: byPnl.slice(0, filters.topN),
+  };
+}
+
 export async function loadScanForLatestDate() {
   const meta = await getLatestScanMeta();
   if (!meta) return { meta: null, rows: [] };
@@ -187,12 +267,9 @@ export async function loadScanForLatestDate() {
   const pool = getPool();
   const [rows] = await pool.execute(
     `
-    SELECT symbol, as_of_date, opt_fast, opt_slow, opt_used_default,
-           opt_r3y, opt_r1y, opt_min_return, running_total, running_total_pct,
-           last_signal, signal_date, bar_count
-    FROM symbol_daily_scan
-    WHERE as_of_date = ?
-    ORDER BY symbol ASC
+    ${SCAN_ROW_SELECT}
+    WHERE scan.as_of_date = ?
+    ORDER BY scan.symbol ASC
     `,
     [meta.asOfDate]
   );
@@ -219,13 +296,7 @@ export async function loadScanForDate(asOfDate, { topN = 25 } = {}) {
   const pool = getPool();
   const [rows] = await pool.execute(
     `
-    SELECT scan.symbol, scan.as_of_date, scan.opt_fast, scan.opt_slow,
-           scan.           opt_used_default, scan.opt_r3y, scan.opt_r1y, scan.opt_min_return,
-           scan.running_total, scan.running_total_pct,
-           scan.last_signal, scan.signal_date, scan.bar_count,
-           ss.company_name
-    FROM symbol_daily_scan scan
-    LEFT JOIN stock_symbols ss ON ss.symbol = scan.symbol
+    ${SCAN_ROW_SELECT}
     WHERE scan.as_of_date = ?
     ORDER BY scan.symbol ASC
     `,

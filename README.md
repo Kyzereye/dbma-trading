@@ -122,14 +122,14 @@ Reads active symbols from `stock_symbols`; stores OHLC in `daily_stock_data`. Sh
 Precompute optimized MA, opens/closes, and running P/L per symbol into `symbol_daily_scan`:
 
 ```bash
-npm run scan:nightly
+npm run analyze-symbols
 ```
 
 Test:
 
 ```bash
-npm run scan:nightly -- --symbol AAPL
-npm run scan:nightly -- --limit 10
+npm run analyze-symbols -- --symbol AAPL
+npm run analyze-symbols -- --limit 10
 ```
 
 Requires `daily_stock_data` for each symbol. Powers the **Signals** and **Daily log** tabs in the dashboard.
@@ -163,13 +163,13 @@ Ingest new bars, then run the symbol scan:
 0 18 * * 1-5 cd /path/to/DBMA-trading && /usr/bin/npm run pipeline:nightly >> /tmp/dbma-pipeline.log 2>&1
 ```
 
-`pipeline:nightly` runs: `get-daily-price-data` → `scan:nightly`.
+`pipeline:nightly` runs: `get-daily-price-data` → `analyze-symbols`.
 
 ### Separate price update and scan (optional)
 
 ```cron
 0 17 * * 1-5 cd /path/to/DBMA-trading && /usr/bin/npm run get-daily-price-data >> /tmp/dbma-prices.log 2>&1
-30 17 * * 1-5 cd /path/to/DBMA-trading && /usr/bin/npm run scan:nightly >> /tmp/dbma-scan.log 2>&1
+30 17 * * 1-5 cd /path/to/DBMA-trading && /usr/bin/npm run analyze-symbols >> /tmp/dbma-scan.log 2>&1
 ```
 
 ### Weekly symbol list refresh
@@ -244,8 +244,8 @@ Symbol list endpoints (append `?apikey=YOUR_KEY`):
 | `npm run dev` | Backend + frontend dev servers |
 | `npm run get-bulk-price-data` | FMP bulk EOD (~3 years) |
 | `npm run get-daily-price-data` | FMP nightly EOD update |
-| `npm run scan:nightly` | Nightly symbol scan → `symbol_daily_scan` |
-| `npm run pipeline:nightly` | `get-daily-price-data` then `scan:nightly` |
+| `npm run analyze-symbols` | Nightly symbol scan → `symbol_daily_scan` |
+| `npm run pipeline:nightly` | `get-daily-price-data` then `analyze-symbols` |
 | `npm run get-symbols` | Refresh symbol list → `stock_symbols` |
 | `npm run sync-symbol-changes` | FMP renames/delistings → `stock_symbols` + `data/symbol-changes.log` |
 | `npm run optimize:ma -- AAPL` | CLI MA optimization for one symbol |

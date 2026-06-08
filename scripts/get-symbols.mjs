@@ -1,9 +1,6 @@
 /**
- * Load US stocks & ETFs into stock_symbols from index/list sources.
- * Forex/crypto: sql_queries/forex_and_crypto_symbols.sql (run once on install).
- * Snapshot: data/stored-symbols.json (written after each run).
- *
- *   npm run get-symbols
+ * Legacy: free index/Nasdaq CSV sources (replaced by get-symbols-FMP.mjs).
+ * Use: npm run get-symbols
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
@@ -83,10 +80,13 @@ function rowFromIndexJson(entry) {
   const symbol = normalizeSymbol(entry.Symbol ?? entry.symbol);
   if (!symbol) return null;
 
+  const company_name = normalizeCompanyName(entry.Name ?? entry.name ?? symbol);
+  const asset_type = /\bETF\b/i.test(company_name) ? "etf" : "stock";
+
   return {
     symbol,
-    company_name: normalizeCompanyName(entry.Name ?? entry.name ?? symbol),
-    asset_type: "stock",
+    company_name,
+    asset_type,
     exchange: null,
     is_active: 1,
   };
@@ -122,9 +122,11 @@ function mergeSymbol(map, row) {
     map.set(row.symbol, row);
     return;
   }
-  if (!existing.exchange && row.exchange) {
-    map.set(row.symbol, { ...existing, exchange: row.exchange });
-  }
+  map.set(row.symbol, {
+    ...existing,
+    exchange: existing.exchange || row.exchange,
+    asset_type: row.asset_type === "etf" ? "etf" : existing.asset_type,
+  });
 }
 
 export async function loadSymbolRows() {
