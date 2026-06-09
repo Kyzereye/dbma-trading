@@ -320,8 +320,7 @@ export default function UserDashboardTab({ onSelectSymbol }) {
             {topLoading ? (
               <p className="daily-signals-status">Loading…</p>
             ) : topDisplayRows.length > 0 ? (
-              <div className="scanner-scroll">
-                <table className="scanner-table user-dash-table">
+              <table className="scanner-table user-dash-table">
                   <thead>
                     <tr>
                       <th>#</th>
@@ -368,7 +367,6 @@ export default function UserDashboardTab({ onSelectSymbol }) {
                     })}
                   </tbody>
                 </table>
-              </div>
             ) : null}
           </section>
         </div>

@@ -49,7 +49,7 @@ function SignalTable({ rows, kind, onSelect, emptyMessage }) {
             <tr
               key={`${kind}-${row.symbol}`}
               onClick={() => onSelect?.(row)}
-              title="Load chart with optimized MA"
+              title="Load chart"
             >
               <td>{row.symbol}</td>
               <td className="daily-signals-company">

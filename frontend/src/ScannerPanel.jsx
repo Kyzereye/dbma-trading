@@ -21,9 +21,6 @@ function ScanTable({ rows, onSelect, emptyMessage, activeSymbol }) {
             <SortableTh col="symbol" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
               Symbol
             </SortableTh>
-            <SortableTh col="ma" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
-              MA
-            </SortableTh>
             <SortableTh
               col="pnl"
               sortKey={sortKey}
@@ -33,8 +30,14 @@ function ScanTable({ rows, onSelect, emptyMessage, activeSymbol }) {
             >
               P/L
             </SortableTh>
-            <SortableTh col="min" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
-              Min
+            <SortableTh
+              col="pnlPct"
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              className="scanner-col-num"
+            >
+              P/L%
             </SortableTh>
           </tr>
         </thead>
@@ -46,14 +49,11 @@ function ScanTable({ rows, onSelect, emptyMessage, activeSymbol }) {
                 row.symbol === activeSymbol ? "scanner-row-active" : ""
               }
               onClick={() => onSelect(row)}
-              title="Load chart with optimized MA"
+              title="Load chart"
             >
               <td>{row.symbol}</td>
-              <td>
-                {row.optFast}/{row.optSlow}
-              </td>
               <td className="scanner-col-num">{formatPnl(row.runningTotal)}</td>
-              <td>{formatPct(row.optMinReturn)}</td>
+              <td className="scanner-col-num">{formatPct(row.runningTotalPct)}</td>
             </tr>
           ))}
         </tbody>
@@ -96,7 +96,7 @@ export default function ScannerPanel({ activeSymbol, onSelectSymbol }) {
   };
 
   return (
-    <div className="dashboard-tab-page">
+    <div className="dashboard-tab-page scanner-page">
       <h1 className="dashboard-tab-title">
         Signals
         {data?.asOfDate ? (
@@ -113,7 +113,7 @@ export default function ScannerPanel({ activeSymbol, onSelectSymbol }) {
       {data?.asOfDate ? (
         <>
           <p className="scanner-meta">
-            {data.total} symbols · optimized EMA per symbol · as of{" "}
+            {data.total} symbols · as of{" "}
             {data.asOfDate}
             <button
               type="button"

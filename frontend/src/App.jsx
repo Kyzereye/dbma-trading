@@ -4,16 +4,28 @@ import CandlestickChart from "./CandlestickChart.jsx";
 import DailySignals from "./DailySignals.jsx";
 import DashboardTabs from "./DashboardTabs.jsx";
 import { MA_FAST_COLOR, MA_SLOW_COLOR } from "./chartColors.js";
-import { formatPct, optimizeMa } from "./optimizeMa.js";
 import ScannerPanel from "./ScannerPanel.jsx";
 import SymbolAutocomplete from "./SymbolAutocomplete.jsx";
 import TradingRules from "./TradingRules.jsx";
 import SymbolChangesTab from "./SymbolChangesTab.jsx";
 import UserDashboardTab from "./UserDashboardTab.jsx";
+import { formatPct } from "./optimizeMa.js";
 import { ENTRY_CONFIRM, simulateTrades } from "./tradeSignals.js";
 
 const DEFAULT_SYMBOL = "AAPL";
 const DEFAULT_MA = { fast: 21, slow: 50, maType: "ema" };
+const FAVORITES_KEY = "dbma-favorites";
+
+function loadFavorites() {
+  try {
+    const raw = localStorage.getItem(FAVORITES_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.map((s) => String(s).toUpperCase()) : []);
+  } catch {
+    return new Set();
+  }
+}
 
 function parsePeriod(value, fallback) {
   const n = Number(String(value).trim());
@@ -74,17 +86,35 @@ function formatChartMeta(companyName, sym, fromDate, toDate) {
   return parts.join(" - ");
 }
 
-function enrichTradesForTable(trades) {
+function enrichTradesForTable(trades, asOfDate) {
   const chronological = [...trades].sort((a, b) =>
     a.entryDate.localeCompare(b.entryDate)
   );
   let runningTotal = 0;
+  let compoundFactor = 1;
+  let hasClosedTrade = false;
   const enriched = chronological.map((t) => {
     const tradePnl = t.open ? null : t.exitPrice - t.entryPrice;
+    const tradePnlPct =
+      t.open || !t.entryPrice ? null : (t.exitPrice / t.entryPrice - 1) * 100;
+    const end = t.open ? asOfDate : t.exitDate;
+    const daysInTrade =
+      t.entryDate && end
+        ? Math.max(
+            0,
+            Math.round(
+              (new Date(`${end}T12:00:00`) - new Date(`${t.entryDate}T12:00:00`)) /
+                86400000
+            )
+          )
+        : null;
     if (tradePnl != null) {
       runningTotal += tradePnl;
+      compoundFactor *= t.exitPrice / t.entryPrice;
+      hasClosedTrade = true;
     }
-    return { ...t, tradePnl, runningTotal };
+    const runningTotalPct = hasClosedTrade ? (compoundFactor - 1) * 100 : null;
+    return { ...t, tradePnl, tradePnlPct, daysInTrade, runningTotal, runningTotalPct };
   });
   return enriched.sort((a, b) => b.entryDate.localeCompare(a.entryDate));
 }
@@ -101,6 +131,24 @@ export default function App() {
   const [fastInput, setFastInput] = useState(String(DEFAULT_MA.fast));
   const [slowInput, setSlowInput] = useState(String(DEFAULT_MA.slow));
   const [entryConfirm, setEntryConfirm] = useState(ENTRY_CONFIRM.SINGLE);
+  const [favorites, setFavorites] = useState(loadFavorites);
+
+  useEffect(() => {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites].sort()));
+  }, [favorites]);
+
+  const isFavorite = favorites.has(symbol);
+
+  function toggleFavorite() {
+    const s = symbol.trim().toUpperCase();
+    if (!s) return;
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
+  }
 
   const load = useCallback(async (sym) => {
     const s = sym.trim().toUpperCase();
@@ -155,10 +203,6 @@ export default function App() {
     syncMaInputs(next, setFastInput, setSlowInput);
   }
 
-  function applyMa(fast, slow) {
-    applyMaPeriods(clampMaConfig(fast, slow, maPeriods.maType, maPeriods));
-  }
-
   function updateMaType(maType) {
     applyMaPeriods(clampMaConfig(maPeriods.fast, maPeriods.slow, maType, maPeriods));
   }
@@ -170,21 +214,6 @@ export default function App() {
   const series = payload?.data ?? [];
   const { fast, slow, maType } = maPeriods;
 
-  const optimizeResult = useMemo(
-    () => (series.length ? optimizeMa(series) : null),
-    [series]
-  );
-
-  useEffect(() => {
-    const top = optimizeResult?.top?.[0];
-    if (top) {
-      applyMaPeriods({ fast: top.fast, slow: top.slow, maType: "ema" });
-    } else {
-      applyMaPeriods(DEFAULT_MA);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when symbol/data changes
-  }, [optimizeResult, symbol]);
-
   const { trades, markers } = useMemo(
     () =>
       series.length
@@ -193,7 +222,10 @@ export default function App() {
     [series, fast, slow, maType, entryConfirm]
   );
 
-  const tradesDisplay = useMemo(() => enrichTradesForTable(trades), [trades]);
+  const tradesDisplay = useMemo(() => {
+    const asOfDate = series.length ? series[series.length - 1].date : null;
+    return enrichTradesForTable(trades, asOfDate);
+  }, [trades, series]);
 
   return (
     <div className="app-shell">
@@ -245,7 +277,21 @@ export default function App() {
 
         <form className="sidebar-form" onSubmit={onSubmit}>
           <label className="sidebar-field">
-            <span>Symbol</span>
+            <div className="sidebar-field-label">
+              <span>Symbol</span>
+              <button
+                type="button"
+                className={`sidebar-favorite-btn${isFavorite ? " is-favorite" : ""}`}
+                onClick={toggleFavorite}
+                title="Favorite"
+                aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                aria-pressed={isFavorite}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </button>
+            </div>
             <SymbolAutocomplete
               value={input}
               onChange={setInput}
@@ -311,6 +357,22 @@ export default function App() {
           </select>
         </label>
         </div>
+
+        <div className="sidebar-trades-help" aria-label="Opens and closes column definitions">
+          <p className="sidebar-trades-help-title">Opens &amp; closes</p>
+          <dl>
+            <dt>P/L</dt>
+            <dd>Close price minus open price.</dd>
+            <dt>P/L%</dt>
+            <dd>(close ÷ open − 1) × 100.</dd>
+            <dt>DiT - Days in Trade</dt>
+            <dd>Calendar days from open to close; open trades use the latest chart date.</dd>
+            <dt>Running P/L</dt>
+            <dd>Sum of P/L from closed trades up to that row.</dd>
+            <dt>Running P/L %</dt>
+            <dd>Compounded return from those closed trades: multiply (close ÷ open) for each, then − 1, × 100.</dd>
+          </dl>
+        </div>
       </aside>
 
       <main className="main-content">
@@ -354,8 +416,11 @@ export default function App() {
                       <th>Open price</th>
                       <th>Close</th>
                       <th>Close price</th>
+                      <th className="trades-col-num">DiT</th>
                       <th className="trades-col-num">P/L</th>
-                      <th className="trades-col-num">Running total</th>
+                      <th className="trades-col-num">P/L%</th>
+                      <th className="trades-col-num">Running P/L</th>
+                      <th className="trades-col-num">Running P/L %</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -366,78 +431,24 @@ export default function App() {
                         <td>{t.open ? "—" : t.exitDate}</td>
                         <td>{t.open ? "—" : t.exitPrice.toFixed(2)}</td>
                         <td className="trades-col-num">
+                          {t.daysInTrade == null ? "—" : t.daysInTrade}
+                        </td>
+                        <td className="trades-col-num">
                           {t.tradePnl == null ? "—" : formatPnl(t.tradePnl)}
                         </td>
                         <td className="trades-col-num">
+                          {t.tradePnlPct == null ? "—" : formatPct(t.tradePnlPct)}
+                        </td>
+                        <td className="trades-col-num">
                           {formatPnl(t.runningTotal)}
+                        </td>
+                        <td className="trades-col-num">
+                          {t.runningTotalPct == null ? "—" : formatPct(t.runningTotalPct)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </details>
-          ) : null}
-
-          {optimizeResult ? (
-            <details className="expand-panel">
-              <summary>Optimized MAs — {symbol}</summary>
-              <div className="expand-body">
-              <p className="optimize-note">
-                Top 3 by min(3y, 1y return). Click a row to apply fast/slow to
-                the chart.
-                {optimizeResult.totalPairs
-                  ? ` ${optimizeResult.totalPairs} pairs tested.`
-                  : ""}
-              </p>
-              {optimizeResult.baseline ? (
-                <p className="optimize-note">
-                  Default 21/50: rank #{optimizeResult.baseline.rank} · 3y{" "}
-                  {formatPct(optimizeResult.baseline.r3y)} · 1y{" "}
-                  {formatPct(optimizeResult.baseline.r1y)}
-                </p>
-              ) : null}
-              {optimizeResult.top.length ? (
-                <div className="optimize-scroll">
-                  <table className="optimize-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Fast</th>
-                        <th>Slow</th>
-                        <th>3y</th>
-                        <th>1y</th>
-                        <th>Min</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {optimizeResult.top.map((row, i) => {
-                        const active =
-                          row.fast === fast &&
-                          row.slow === slow &&
-                          maType === "ema";
-                        return (
-                          <tr
-                            key={`${row.fast}-${row.slow}`}
-                            className={active ? "optimize-row-active" : ""}
-                            onClick={() => applyMa(row.fast, row.slow)}
-                            title="Apply to chart"
-                          >
-                            <td>{i + 1}</td>
-                            <td>{row.fast}</td>
-                            <td>{row.slow}</td>
-                            <td>{formatPct(row.r3y)}</td>
-                            <td>{formatPct(row.r1y)}</td>
-                            <td>{formatPct(row.minReturn)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p>No pairs met minimum trade counts.</p>
-              )}
               </div>
             </details>
           ) : null}

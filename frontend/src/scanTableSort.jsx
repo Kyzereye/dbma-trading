@@ -6,8 +6,6 @@ function compareScanRows(a, b, key) {
       return a.symbol.localeCompare(b.symbol);
     case "company":
       return String(a.companyName ?? "").localeCompare(String(b.companyName ?? ""));
-    case "ma":
-      return a.optFast - b.optFast || a.optSlow - b.optSlow;
     case "pnl":
       return a.runningTotal - b.runningTotal;
     case "pnlPct": {

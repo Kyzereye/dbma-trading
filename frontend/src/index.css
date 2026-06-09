@@ -62,9 +62,42 @@ body {
   gap: 0.25rem;
 }
 
-.sidebar-field span {
+.sidebar-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.sidebar-field-label span {
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+.sidebar-favorite-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+  color: var(--muted);
+}
+
+.sidebar-favorite-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+}
+
+.sidebar-favorite-btn.is-favorite {
+  color: #e53935;
+}
+
+.sidebar-favorite-btn.is-favorite svg {
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 .sidebar-field input,
@@ -293,16 +326,51 @@ button:disabled {
   border-top: 1px solid var(--border);
 }
 
+.sidebar-trades-help {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.45;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-trades-help-title {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sidebar-trades-help dl {
+  margin: 0;
+}
+
+.sidebar-trades-help dt {
+  margin: 0.45rem 0 0.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sidebar-trades-help dt:first-of-type {
+  margin-top: 0;
+}
+
+.sidebar-trades-help dd {
+  margin: 0;
+}
+
 .trades-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.85rem;
 }
 
 .trades-table th,
 .trades-table td {
-  padding: 0.4rem 0.6rem;
+  padding: 0.4rem 1rem 0.4rem 0;
   text-align: left;
+  vertical-align: top;
   border-bottom: 1px solid var(--border);
 }
 
@@ -312,7 +380,6 @@ button:disabled {
 }
 
 .trades-table .trades-col-num {
-  text-align: right;
   white-space: nowrap;
 }
 
@@ -447,8 +514,14 @@ button:disabled {
 
 .scanner-scroll {
   overflow-x: auto;
-  max-height: 200px;
   overflow-y: auto;
+  max-height: 200px;
+}
+
+/* Signals tab: scroll after ~20 data rows (+ header) */
+.scanner-page .scanner-scroll {
+  --scanner-row-height: 1.625rem;
+  max-height: calc(var(--scanner-row-height) * 21);
 }
 
 .scanner-table {
