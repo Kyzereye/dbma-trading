@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AppHeader from "./AppHeader.jsx";
 import CandlestickChart from "./CandlestickChart.jsx";
+import RunningPnlChart, { runningPnlPctPoints } from "./RunningPnlChart.jsx";
 import DailySignals from "./DailySignals.jsx";
 import DashboardTabs from "./DashboardTabs.jsx";
 import { MA_FAST_COLOR, MA_SLOW_COLOR } from "./chartColors.js";
@@ -227,6 +228,11 @@ export default function App() {
     return enrichTradesForTable(trades, asOfDate);
   }, [trades, series]);
 
+  const runningPnlPctSeries = useMemo(
+    () => runningPnlPctPoints(trades),
+    [trades]
+  );
+
   return (
     <div className="app-shell">
       <AppHeader
@@ -401,6 +407,15 @@ export default function App() {
               <p>No rows returned.</p>
             )}
           </div>
+
+          {series.length && trades.length ? (
+            <details className="expand-panel">
+              <summary>Running P/L %</summary>
+              <div className="expand-body">
+                <RunningPnlChart points={runningPnlPctSeries} />
+              </div>
+            </details>
+          ) : null}
 
           {series.length && trades.length ? (
             <details className="expand-panel">

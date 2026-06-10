@@ -1,4 +1,4 @@
-export function computeEma(bars, period) {
+function computeEma(bars, period) {
   if (bars.length < period) return [];
   const k = 2 / (period + 1);
   const closes = bars.map((b) => b.close);
@@ -11,7 +11,7 @@ export function computeEma(bars, period) {
   return out;
 }
 
-export function computeSma(bars, period) {
+function computeSma(bars, period) {
   if (bars.length < period) return [];
   const closes = bars.map((b) => b.close);
   let sum = closes.slice(0, period).reduce((a, b) => a + b, 0);

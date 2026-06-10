@@ -1,9 +1,9 @@
 import { optimizeMa } from "./optimizeMa.js";
 import { simulateTrades } from "./tradeSignals.js";
 
-export const DEFAULT_OPT_MA = { fast: 21, slow: 50 };
+const DEFAULT_OPT_MA = { fast: 21, slow: 50 };
 
-export function runningTotalFromTrades(trades) {
+function runningTotalFromTrades(trades) {
   let total = 0;
   for (const t of trades) {
     if (!t.open) {
@@ -14,7 +14,7 @@ export function runningTotalFromTrades(trades) {
 }
 
 /** Compounded percent return from closed trades (same trades as runningTotal). */
-export function runningTotalPctFromTrades(trades) {
+function runningTotalPctFromTrades(trades) {
   const closed = trades.filter((t) => !t.open);
   if (!closed.length) return null;
   let factor = 1;
@@ -28,7 +28,7 @@ export function runningTotalPctFromTrades(trades) {
  * Classify the most recent signal relative to the latest bar date.
  * entry / exit — signal on the last bar; open — in trade from an earlier bar.
  */
-export function classifyLastSignal(trades, markers, lastBarDate) {
+function classifyLastSignal(trades, markers, lastBarDate) {
   const onLast = markers.filter((m) => m.time === lastBarDate);
   if (onLast.some((m) => m.text === "Close")) {
     return { lastSignal: "exit", signalDate: lastBarDate };

@@ -141,7 +141,7 @@ export default function UserDashboardTab({ onSelectSymbol }) {
     setTopLoading(true);
     setTopError("");
     try {
-      const params = new URLSearchParams({ top: "10" });
+      const params = new URLSearchParams({ top: "25" });
       if (priceMin !== "") params.set("priceMin", priceMin);
       if (priceMax !== "") params.set("priceMax", priceMax);
       const enabledAssets = Object.entries(assetTypes)
@@ -160,10 +160,7 @@ export default function UserDashboardTab({ onSelectSymbol }) {
         return;
       }
       setTopRows(body.top ?? []);
-      setScanMeta({
-        asOfDate: body.asOfDate ?? null,
-        computedAt: body.computedAt ?? null,
-      });
+      setScanMeta({ asOfDate: body.asOfDate ?? null });
     } catch (err) {
       setTopRows([]);
       setScanMeta(null);
@@ -176,8 +173,15 @@ export default function UserDashboardTab({ onSelectSymbol }) {
   const topDisplayRows = useMemo(
     () =>
       filterTopRows(topRows, priceMin, priceMax, assetTypes)
-        .sort((a, b) => b.runningTotal - a.runningTotal)
-        .slice(0, 10),
+        .sort((a, b) => {
+          const av = a.runningTotalPct;
+          const bv = b.runningTotalPct;
+          if (av == null && bv == null) return 0;
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          return bv - av;
+        })
+        .slice(0, 25),
     [topRows, priceMin, priceMax, assetTypes]
   );
 
@@ -215,7 +219,7 @@ export default function UserDashboardTab({ onSelectSymbol }) {
           <h2 className="user-dash-section-title">Settings</h2>
 
           <fieldset className="user-dash-fieldset">
-            <legend>Top 10 price range</legend>
+            <legend>Top 25 price range</legend>
             <p className="user-dash-hint">
               Share price (last close), not P/L.
             </p>
@@ -314,7 +318,7 @@ export default function UserDashboardTab({ onSelectSymbol }) {
           <section className="user-dash-panel">
             <h2 className="user-dash-section-title">Top performers</h2>
             <p className="user-dash-hint">
-              Best running P/L among symbols in your price range (up to 10).
+              Best running P/L% among symbols in your price range (up to 25).
             </p>
             {topError ? <p className="error">{topError}</p> : null}
             {topLoading ? (

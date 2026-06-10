@@ -1,13 +1,13 @@
 import { simulateTrades } from "./tradeSignals.js";
 
-export const FAST_MIN = 8;
-export const FAST_MAX = 30;
-export const SLOW_MIN = 30;
-export const SLOW_MAX = 100;
-export const DAYS_1Y = 252;
-export const MIN_TRADES_3Y = 3;
-export const MIN_TRADES_1Y = 2;
-export const DEFAULT_TOP_N = 3;
+const FAST_MIN = 8;
+const FAST_MAX = 30;
+const SLOW_MIN = 30;
+const SLOW_MAX = 100;
+const DAYS_1Y = 252;
+const MIN_TRADES_3Y = 3;
+const MIN_TRADES_1Y = 2;
+const DEFAULT_TOP_N = 3;
 
 function sliceLastBars(bars, count) {
   if (bars.length <= count) return bars;

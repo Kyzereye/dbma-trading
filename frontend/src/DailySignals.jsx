@@ -7,6 +7,11 @@ function formatPnl(v) {
   return `${sign}${v.toFixed(2)}`;
 }
 
+function formatClose(price) {
+  if (price == null || !Number.isFinite(price)) return "—";
+  return `$${price.toFixed(2)}`;
+}
+
 function SignalTable({ rows, kind, onSelect, emptyMessage }) {
   const { sortedRows, sortKey, sortDir, toggleSort } = useScanTableSort(rows);
 
@@ -23,6 +28,15 @@ function SignalTable({ rows, kind, onSelect, emptyMessage }) {
             </SortableTh>
             <SortableTh col="company" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}>
               Company
+            </SortableTh>
+            <SortableTh
+              col="price"
+              sortKey={sortKey}
+              sortDir={sortDir}
+              onSort={toggleSort}
+              className="scanner-col-num"
+            >
+              Close
             </SortableTh>
             <SortableTh
               col="pnl"
@@ -55,6 +69,7 @@ function SignalTable({ rows, kind, onSelect, emptyMessage }) {
               <td className="daily-signals-company">
                 {row.companyName ?? "—"}
               </td>
+              <td className="scanner-col-num">{formatClose(row.price)}</td>
               <td className="scanner-col-num">{formatPnl(row.runningTotal)}</td>
               <td className="scanner-col-num">{formatPct(row.runningTotalPct)}</td>
             </tr>

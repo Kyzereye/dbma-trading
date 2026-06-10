@@ -31,7 +31,7 @@ function mapBarRow(row) {
   };
 }
 
-export async function listSymbols() {
+async function listSymbols() {
   const pool = getPool();
   const [rows] = await pool.execute(
     `SELECT symbol FROM stock_symbols ORDER BY symbol ASC`
@@ -140,7 +140,7 @@ export async function upsertScanRow(symbol, scan) {
   );
 }
 
-export async function getLatestScanMeta() {
+async function getLatestScanMeta() {
   const pool = getPool();
   const [rows] = await pool.execute(
     `
@@ -193,7 +193,7 @@ const SCAN_ROW_SELECT = `
   LEFT JOIN daily_stock_data d ON d.symbol_id = ss.id AND d.date = scan.as_of_date
 `;
 
-export function applyScanFilters(
+function applyScanFilters(
   rows,
   { priceMin = null, priceMax = null, assetTypes = null } = {}
 ) {
@@ -216,7 +216,7 @@ export function applyScanFilters(
 export function parseTopPerformerQuery(query) {
   const topN = Math.min(
     100,
-    Math.max(1, Number.parseInt(String(query.top ?? "10"), 10) || 10)
+    Math.max(1, Number.parseInt(String(query.top ?? "25"), 10) || 25)
   );
   const priceMinRaw = query.priceMin;
   const priceMaxRaw = query.priceMax;
@@ -251,12 +251,19 @@ export async function loadTopPerformers(filters) {
   }
 
   const filtered = applyScanFilters(rows, filters);
-  const byPnl = [...filtered].sort((a, b) => b.runningTotal - a.runningTotal);
+  const byPnlPct = [...filtered].sort((a, b) => {
+    const av = a.runningTotalPct;
+    const bv = b.runningTotalPct;
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return bv - av;
+  });
 
   return {
     asOfDate: meta.asOfDate,
     computedAt: meta.computedAt,
-    top: byPnl.slice(0, filters.topN),
+    top: byPnlPct.slice(0, filters.topN),
   };
 }
 

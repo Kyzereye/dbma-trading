@@ -1,6 +1,11 @@
 /**
- * Legacy: free index/Nasdaq CSV sources (replaced by get-symbols-FMP.mjs).
- * Use: npm run get-symbols
+ * SUPERSEDED by get-symbols-FMP.mjs — use `npm run get-symbols` (FMP) for normal runs.
+ *
+ * Kept for reference: free index/Nasdaq CSV sources, CSV parsing, asset-type
+ * heuristics, and merge logic that may be useful later.
+ *
+ * To run this legacy script directly:
+ *   node scripts/get-symbols.mjs
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
