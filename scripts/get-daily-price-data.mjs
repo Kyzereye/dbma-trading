@@ -96,7 +96,6 @@ async function main() {
   console.log(
     `\nDone in ${sec}s — updated: ${ok}, up to date: ${current}, no data: ${empty}, failed: ${failed}, bars: ${totalBars}. Log: ${PRICE_DATA_LOG_REL}`
   );
-  if (failed > 0) process.exitCode = 1;
 }
 
 main()
