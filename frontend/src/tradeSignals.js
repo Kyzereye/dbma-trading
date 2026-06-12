@@ -11,7 +11,6 @@ export const ENTRY_CONFIRM = {
  * Entry: not in trade, close > slow MA, fast > slow, close > fast MA.
  * entryConfirm 'single' — one close above fast is enough.
  * entryConfirm 'double' — two consecutive closes above fast required.
- * After exit (close < fast MA), one close above fast clears recovery block.
  * Exit: in trade and close < fast MA.
  */
 export function simulateTrades(
@@ -28,7 +27,6 @@ export function simulateTrades(
   const markers = [];
   let inTrade = false;
   let open = null;
-  let needsRecoveryAboveFast = false;
   let consecutiveClosesAboveFast = 0;
 
   for (const bar of bars) {
@@ -38,7 +36,6 @@ export function simulateTrades(
 
     if (bar.close > eFast) {
       consecutiveClosesAboveFast += 1;
-      needsRecoveryAboveFast = false;
     } else {
       consecutiveClosesAboveFast = 0;
     }
@@ -56,11 +53,9 @@ export function simulateTrades(
         text: "Close",
       });
       open = null;
-      needsRecoveryAboveFast = true;
       consecutiveClosesAboveFast = 0;
     } else if (
       !inTrade &&
-      !needsRecoveryAboveFast &&
       bar.close > eSlow &&
       bar.close > eFast &&
       eFast > eSlow &&

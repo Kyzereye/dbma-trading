@@ -123,7 +123,7 @@ function formatClose(price) {
   return `$${price.toFixed(2)}`;
 }
 
-export default function UserDashboardTab({ onSelectSymbol }) {
+export default function UserDashboardTab({ onSelectSymbol, onGoRules }) {
   const [priceMin, setPriceMin] = useState("10");
   const [priceMax, setPriceMax] = useState("20");
   const [assetTypes, setAssetTypes] = useState({
@@ -271,6 +271,9 @@ export default function UserDashboardTab({ onSelectSymbol }) {
         <div className="user-dash-main">
           <section className="user-dash-panel">
             <h2 className="user-dash-section-title">Favorites</h2>
+            <p className="user-dash-hint user-dash-coming-soon">
+              Sample — coming soon
+            </p>
             {favoritesFiltered.length ? (
               <div className="scanner-scroll">
                 <table className="scanner-table user-dash-table">
@@ -325,55 +328,91 @@ export default function UserDashboardTab({ onSelectSymbol }) {
               <p className="daily-signals-status">Loading…</p>
             ) : topDisplayRows.length > 0 ? (
               <table className="scanner-table user-dash-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Symbol</th>
-                      <th>Company</th>
-                      <th className="scanner-col-num">Close</th>
-                      <th>Position</th>
-                      <th>Status</th>
-                      <th className="scanner-col-num">P/L</th>
-                      <th className="scanner-col-num">P/L%</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topDisplayRows.map((row, i) => {
-                      const inTrade = row.lastSignal === "open";
-                      return (
-                        <tr
-                          key={row.symbol}
-                          onClick={() =>
-                            onSelectSymbol?.(row.symbol, row.optFast, row.optSlow)
-                          }
-                          title="Open chart"
-                        >
-                          <td>{i + 1}</td>
-                          <td>{row.symbol}</td>
-                          <td className="daily-signals-company">
-                            {row.companyName ?? "—"}
-                          </td>
-                          <td className="scanner-col-num">{formatClose(row.price)}</td>
-                          <td>
-                            <PositionBadge inTrade={inTrade} />
-                          </td>
-                          <td>
-                            <SignalBadge lastSignal={row.lastSignal} />
-                          </td>
-                          <td className="scanner-col-num">
-                            {formatPnl(row.runningTotal)}
-                          </td>
-                          <td className="scanner-col-num">
-                            {formatPct(row.runningTotalPct)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Symbol</th>
+                    <th>Company</th>
+                    <th className="scanner-col-num">Close</th>
+                    <th>Position</th>
+                    <th>Status</th>
+                    <th className="scanner-col-num">P/L</th>
+                    <th className="scanner-col-num">P/L%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topDisplayRows.map((row, i) => {
+                    const inTrade = row.lastSignal === "open";
+                    return (
+                      <tr
+                        key={row.symbol}
+                        onClick={() =>
+                          onSelectSymbol?.(row.symbol, row.optFast, row.optSlow)
+                        }
+                        title="Open chart"
+                      >
+                        <td>{i + 1}</td>
+                        <td>{row.symbol}</td>
+                        <td className="daily-signals-company">
+                          {row.companyName ?? "—"}
+                        </td>
+                        <td className="scanner-col-num">{formatClose(row.price)}</td>
+                        <td>
+                          <PositionBadge inTrade={inTrade} />
+                        </td>
+                        <td>
+                          <SignalBadge lastSignal={row.lastSignal} />
+                        </td>
+                        <td className="scanner-col-num">
+                          {formatPnl(row.runningTotal)}
+                        </td>
+                        <td className="scanner-col-num">
+                          {formatPct(row.runningTotalPct)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             ) : null}
           </section>
         </div>
+
+        <aside className="user-dash-about" aria-label="About this site">
+          <h2 className="user-dash-section-title">About JJK Trading Labs</h2>
+          <p className="user-dash-about-lead">
+            This is a free-to-use daily-bar swing trading research tool. Signals are evaluated
+            at the end-of-day close — not on intraday ticks.  It is for information and education purposes only.
+          </p>
+          <p>
+            The site analyzes over 4000 major US stocks, etfs, forex pairs, and crypto symbols each night, evaluating their historical
+            performance, and surfaces open and close signals when price crosses
+            relative to fast and slow moving averages — not when the two MA lines
+            cross each other. Each symbol uses its own optimized fast and slow
+            periods.
+          </p>
+          <p>
+            Use the <strong>Signals</strong> tab for a scan of today's symbols, the{" "}
+            <strong>Daily log</strong> for history by date, and click any symbol
+            to open its chart with trades and running P/L.
+          </p>
+          <p>
+            Entry and exit logic is documented on the rules page.
+          </p>
+          {onGoRules ? (
+            <button
+              type="button"
+              className="user-dash-about-rules-btn"
+              onClick={onGoRules}
+            >
+              Open &amp; close rules
+            </button>
+          ) : null}
+          <p className="user-dash-about-note">
+            No accounts or saved settings — this is an early preview. To share
+            feedback, reply on our Reddit post.
+          </p>
+        </aside>
       </div>
     </div>
   );

@@ -9,9 +9,11 @@ export default function TradingRules() {
         minutes or hours.
       </p>
       <p className="rules-intro">
-        Chart signals use your MA settings and open-confirm mode. The nightly
-        symbol scan uses one close above fast (single confirm) with optimized
-        periods per symbol.
+        Signals are <strong>price vs moving average</strong> — where the daily
+        close sits relative to the fast and slow MAs — not a fast/slow MA line
+        crossover. Chart signals use the periods and open-confirm mode you set in
+        the Chart sidebar. The nightly scan uses one close above fast (single
+        confirm) with per-symbol MA periods from optimization — see below.
       </p>
 
       <section className="rules-section">
@@ -19,8 +21,7 @@ export default function TradingRules() {
         <p>All of the following must be true on the daily close of the open bar:</p>
         <ul>
           <li>Not already in a position</li>
-          <li>Close is above the <strong>slow</strong> moving average</li>
-          <li>Close is above the <strong>fast</strong> moving average</li>
+          <li>Close is above the <strong>slow</strong> and <strong>fast</strong> moving average</li>
           <li>
             <strong>Fast MA is above slow MA</strong> (uptrend alignment)
           </li>
@@ -43,20 +44,10 @@ export default function TradingRules() {
         </ul>
       </section>
 
-      <section className="rules-section">
-        <h2>Re-open after a close</h2>
-        <p>
-          After a close, the system requires a <strong>recovery</strong> before
-          the next open:
-        </p>
-        <ul>
-          <li>
-            Price must close <strong>above the fast MA</strong> once (resets the
-            recovery requirement; applies in both open-confirm modes)
-          </li>
-          <li>Until then, new opens are blocked even if other open conditions match</li>
-        </ul>
-      </section>
+      <p className="rules-intro">
+        After a close, a new open only happens when all open rules above are met
+        again on a later bar.
+      </p>
 
       <section className="rules-section">
         <h2>Still-open positions</h2>
@@ -68,11 +59,18 @@ export default function TradingRules() {
       </section>
 
       <section className="rules-section rules-section-muted">
-        <h2>Optimization</h2>
+        <h2>Moving average optimization</h2>
         <p>
-          For each symbol, fast/slow periods can be chosen from the optimizer panel
-          (top pairs by minimum of 3-year and 1-year return). The nightly symbol
-          scan stores the best pair per symbol in the database.
+          The nightly <strong>Signals</strong> scan and <strong>Daily log</strong>{" "}
+          use a fast and slow MA pair chosen separately for each symbol from
+          historical backtests. That optimization is a starting point only — it
+          may not be optimal for every symbol or market conditions, and mistakes
+          can occur.
+        </p>
+        <p>
+          On the <strong>Chart</strong> tab, enter your own preferred fast and
+          slow periods in the sidebar. Chart signals, markers, and the trades
+          table use your settings, not the scan defaults.
         </p>
       </section>
     </div>

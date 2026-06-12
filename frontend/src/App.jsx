@@ -10,12 +10,22 @@ import SymbolAutocomplete from "./SymbolAutocomplete.jsx";
 import TradingRules from "./TradingRules.jsx";
 import SymbolChangesTab from "./SymbolChangesTab.jsx";
 import UserDashboardTab from "./UserDashboardTab.jsx";
+import DisclaimerDialog from "./DisclaimerDialog.jsx";
 import { formatPct } from "./optimizeMa.js";
 import { ENTRY_CONFIRM, simulateTrades } from "./tradeSignals.js";
 
 const DEFAULT_SYMBOL = "AAPL";
 const DEFAULT_MA = { fast: 21, slow: 50, maType: "ema" };
 const FAVORITES_KEY = "dbma-favorites";
+const DISCLAIMER_SESSION_KEY = "dbma-disclaimer-v1";
+
+function loadDisclaimerAccepted() {
+  try {
+    return sessionStorage.getItem(DISCLAIMER_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 function loadFavorites() {
   try {
@@ -133,6 +143,16 @@ export default function App() {
   const [slowInput, setSlowInput] = useState(String(DEFAULT_MA.slow));
   const [entryConfirm, setEntryConfirm] = useState(ENTRY_CONFIRM.SINGLE);
   const [favorites, setFavorites] = useState(loadFavorites);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(loadDisclaimerAccepted);
+
+  function acceptDisclaimer() {
+    try {
+      sessionStorage.setItem(DISCLAIMER_SESSION_KEY, "1");
+    } catch {
+      // ignore storage errors
+    }
+    setDisclaimerAccepted(true);
+  }
 
   useEffect(() => {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites].sort()));
@@ -234,6 +254,10 @@ export default function App() {
   );
 
   return (
+    <>
+      {!disclaimerAccepted ? (
+        <DisclaimerDialog onAccept={acceptDisclaimer} />
+      ) : (
     <div className="app-shell">
       <AppHeader
         page={page}
@@ -246,7 +270,10 @@ export default function App() {
         <>
           <DashboardTabs tab={tab} onChange={setTab} />
           {tab === "home" ? (
-            <UserDashboardTab onSelectSymbol={onSelectFromScanner} />
+            <UserDashboardTab
+              onSelectSymbol={onSelectFromScanner}
+              onGoRules={() => setPage("rules")}
+            />
           ) : null}
           {tab === "signals" ? (
             <ScannerPanel
@@ -261,8 +288,8 @@ export default function App() {
           {tab === "chart" ? (
     <div className="app-layout">
       <aside className="sidebar">
-        <h1 className="sidebar-title">DBMA</h1>
-        <p className="sidebar-sub">Stock chart</p>
+        <h1 className="sidebar-title">Chart Settings</h1>
+        {/* <p className="sidebar-sub">Stock chart</p> */}
 
         <div className="ma-legend" aria-label="Moving average legend">
           <div className="ma-legend-item">
@@ -270,14 +297,14 @@ export default function App() {
               className="ma-legend-swatch"
               style={{ background: MA_FAST_COLOR }}
             />
-            {maType.toUpperCase()} {fast}
+            Fast {maType.toUpperCase()}
           </div>
           <div className="ma-legend-item">
             <span
               className="ma-legend-swatch"
               style={{ background: MA_SLOW_COLOR }}
             />
-            {maType.toUpperCase()} {slow}
+            Slow {maType.toUpperCase()}
           </div>
         </div>
 
@@ -475,5 +502,7 @@ export default function App() {
         </>
       )}
     </div>
+      )}
+    </>
   );
 }
