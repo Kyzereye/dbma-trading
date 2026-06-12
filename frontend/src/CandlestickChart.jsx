@@ -40,7 +40,9 @@ export default function CandlestickChart({
         horzLines: { color: "#2d3a4a" },
       },
       rightPriceScale: { borderColor: "#2d3a4a" },
-      timeScale: { borderColor: "#2d3a4a" },
+      timeScale: { borderColor: "#2d3a4a",
+        rightOffset: 20,
+       },
     });
 
     const candles = chart.addSeries(CandlestickSeries, {
