@@ -9,6 +9,7 @@
     "get-bulk-price-data": "node scripts/get-bulk-price-data.mjs",
     "get-daily-price-data": "node scripts/get-daily-price-data.mjs",
     "analyze-symbols": "node scripts/analyze-symbols.mjs",
+    "train-entry-filter": "node scripts/train-entry-filter.mjs",
     "pipeline:nightly": "npm run get-daily-price-data; npm run analyze-symbols"
   },
   "devDependencies": {

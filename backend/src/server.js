@@ -12,6 +12,7 @@ import {
   parseTopPerformerQuery,
   searchSymbols,
 } from "./scanData.js";
+import { recordDisclaimerAccept } from "./pageViews.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
@@ -45,10 +46,20 @@ const app = express();
 app.use(
   cors({
     origin: FRONTEND_URL,
-    methods: ["GET", "OPTIONS"],
+    methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   })
 );
+
+app.post("/api/pageview", async (req, res) => {
+  try {
+    await recordDisclaimerAccept(req.get("user-agent"));
+    res.status(204).end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Page view failed" });
+  }
+});
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "dbma-trading-backend" });

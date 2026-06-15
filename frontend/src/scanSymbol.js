@@ -1,5 +1,6 @@
 import { optimizeMa } from "./optimizeMa.js";
 import { simulateTrades } from "./tradeSignals.js";
+import { createEntryAllowFn } from "./entryFilter.js";
 
 const DEFAULT_OPT_MA = { fast: 21, slow: 50 };
 
@@ -56,9 +57,9 @@ function classifyLastSignal(trades, markers, lastBarDate) {
 }
 
 /**
- * Run per-symbol nightly scan: optimized EMA pair + trades + signals.
+ * Per-symbol scan: optimized MAs → rule opens/closes with optional regime + entry filter.
  */
-export function scanSymbol(bars) {
+export function scanSymbol(bars, { useEntryFilter = false, entryFilterModel = null } = {}) {
   if (!bars?.length) return null;
 
   const asOfDate = bars[bars.length - 1].date;
@@ -68,7 +69,13 @@ export function scanSymbol(bars) {
   const fast = best?.fast ?? DEFAULT_OPT_MA.fast;
   const slow = best?.slow ?? DEFAULT_OPT_MA.slow;
 
-  const { trades, markers } = simulateTrades(bars, fast, slow, "ema");
+  const allowEntry = useEntryFilter
+    ? createEntryAllowFn(entryFilterModel)
+    : null;
+
+  const { trades, markers } = simulateTrades(bars, fast, slow, "ema", {
+    allowEntry,
+  });
   const runningTotal = runningTotalFromTrades(trades);
   const runningTotalPct = runningTotalPctFromTrades(trades);
   const { lastSignal, signalDate } = classifyLastSignal(

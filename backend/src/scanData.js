@@ -39,7 +39,7 @@ async function listSymbols() {
   return rows.map((r) => String(r.symbol).toUpperCase());
 }
 
-/** Active US equities for MA ingest + nightly scan (excludes crypto/forex). */
+/** Active symbols for MA ingest + nightly scan (all asset types when is_active = 1). */
 export async function listScannableSymbols() {
   const pool = getPool();
   try {

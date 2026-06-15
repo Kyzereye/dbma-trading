@@ -1,5 +1,5 @@
 /**
- * Analyze each symbol: optimized crossover, opens/closes, running totals → symbol_daily_scan.
+ * Analyze each symbol: optimized MAs, rule opens/closes, entry filter → symbol_daily_scan.
  *
  *   npm run analyze-symbols
  *   npm run analyze-symbols -- --symbol AAPL
@@ -8,6 +8,7 @@
 
 import { scanSymbol } from "../frontend/src/scanSymbol.js";
 import { closePool } from "../backend/src/db.js";
+import { loadEntryFilterModel } from "./entryFilterLoad.mjs";
 import {
   listScannableSymbols,
   loadBarsForSymbol,
@@ -15,6 +16,7 @@ import {
 } from "../backend/src/scanData.js";
 
 const DELAY_MS = Number(process.env.SCAN_DELAY_MS) || 0;
+const entryFilterModel = loadEntryFilterModel();
 
 function parseArgs(argv) {
   const args = argv.slice(2);
@@ -40,7 +42,10 @@ async function analyzeOne(sym) {
   if (!bars.length) {
     return { sym, status: "skip", reason: "no bars" };
   }
-  const result = scanSymbol(bars);
+  const result = scanSymbol(bars, {
+    useEntryFilter: true,
+    entryFilterModel,
+  });
   if (!result) {
     return { sym, status: "skip", reason: "analyze failed" };
   }
@@ -61,7 +66,10 @@ async function main() {
     symbols = symbols.slice(0, limit);
   }
 
-  console.log(`Analyzing ${symbols.length} symbol(s)…\n`);
+  const filterNote = entryFilterModel
+    ? "entry filter: regime + ML model"
+    : "entry filter: regime only (run npm run train-entry-filter)";
+  console.log(`Analyzing ${symbols.length} symbol(s) — ${filterNote}\n`);
 
   let ok = 0;
   let skipped = 0;

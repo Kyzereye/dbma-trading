@@ -18,7 +18,7 @@ export function simulateTrades(
   fastPeriod = 21,
   slowPeriod = 50,
   maType = "ema",
-  { entryConfirm = ENTRY_CONFIRM.SINGLE } = {}
+  { entryConfirm = ENTRY_CONFIRM.SINGLE, allowEntry = null } = {}
 ) {
   const requireDouble = entryConfirm === ENTRY_CONFIRM.DOUBLE;
   const maFast = maByDate(bars, fastPeriod, maType);
@@ -29,7 +29,8 @@ export function simulateTrades(
   let open = null;
   let consecutiveClosesAboveFast = 0;
 
-  for (const bar of bars) {
+  for (let barIndex = 0; barIndex < bars.length; barIndex++) {
+    const bar = bars[barIndex];
     const eFast = maFast.get(bar.date);
     const eSlow = maSlow.get(bar.date);
     if (eFast == null || eSlow == null) continue;
@@ -61,6 +62,10 @@ export function simulateTrades(
       eFast > eSlow &&
       (!requireDouble || consecutiveClosesAboveFast >= 2)
     ) {
+      const entryCtx = { bar, bars, barIndex, eFast, eSlow, maFast, maSlow };
+      if (allowEntry && !allowEntry(entryCtx)) {
+        continue;
+      }
       inTrade = true;
       open = {
         entryDate: bar.date,

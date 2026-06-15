@@ -151,6 +151,7 @@ export default function App() {
     } catch {
       // ignore storage errors
     }
+    fetch("/api/pageview", { method: "POST" }).catch(() => {});
     setDisclaimerAccepted(true);
   }
 
