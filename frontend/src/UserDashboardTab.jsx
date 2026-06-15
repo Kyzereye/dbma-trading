@@ -292,7 +292,7 @@ export default function UserDashboardTab({ onSelectSymbol, onGoRules }) {
                       <tr
                         key={row.symbol}
                         onClick={() =>
-                          onSelectSymbol?.(row.symbol, 21, 50)
+                          onSelectSymbol?.(row.symbol)
                         }
                         title="Open chart"
                       >
@@ -347,7 +347,7 @@ export default function UserDashboardTab({ onSelectSymbol, onGoRules }) {
                       <tr
                         key={row.symbol}
                         onClick={() =>
-                          onSelectSymbol?.(row.symbol, row.optFast, row.optSlow)
+                          onSelectSymbol?.(row.symbol)
                         }
                         title="Open chart"
                       >

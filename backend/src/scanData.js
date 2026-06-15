@@ -82,6 +82,26 @@ export async function searchSymbols(query, limit = 20) {
   return rows.map((r) => String(r.symbol).toUpperCase());
 }
 
+/** Latest optimized fast/slow from symbol_daily_scan, or null if never analyzed. */
+export async function loadOptimizedMaForSymbol(symbol) {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    `
+    SELECT opt_fast, opt_slow
+    FROM symbol_daily_scan
+    WHERE symbol = ?
+    ORDER BY as_of_date DESC
+    LIMIT 1
+    `,
+    [symbol]
+  );
+  if (!rows.length) return null;
+  const fast = Number(rows[0].opt_fast);
+  const slow = Number(rows[0].opt_slow);
+  if (!Number.isFinite(fast) || !Number.isFinite(slow)) return null;
+  return { fast, slow };
+}
+
 export async function loadBarsForSymbol(symbol) {
   const startDate = historyStartDate(HISTORY_YEARS);
   const pool = getPool();

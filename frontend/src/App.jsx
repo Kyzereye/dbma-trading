@@ -15,7 +15,7 @@ import { formatPct } from "./optimizeMa.js";
 import { ENTRY_CONFIRM, simulateTrades } from "./tradeSignals.js";
 
 const DEFAULT_SYMBOL = "AAPL";
-const DEFAULT_MA = { fast: 21, slow: 50, maType: "ema" };
+const DEFAULT_MA = { fast: 21, slow: 50, maType: "sma" };
 const FAVORITES_KEY = "dbma-favorites";
 const DISCLAIMER_SESSION_KEY = "dbma-disclaimer-v1";
 
@@ -48,12 +48,17 @@ function clampMaConfig(fast, slow, maType, fallback = DEFAULT_MA) {
   const f = parsePeriod(fast, fallback.fast);
   let s = parsePeriod(slow, fallback.slow);
   if (s <= f) s = f + 1;
-  return { fast: f, slow: s, maType: maType === "sma" ? "sma" : "ema" };
+  return { fast: f, slow: s, maType: maType === "ema" ? "ema" : "sma" };
 }
 
-function syncMaInputs(periods, setFastInput, setSlowInput) {
-  setFastInput(String(periods.fast));
-  setSlowInput(String(periods.slow));
+function resolveChartMa({ fastInput, slowInput, maType, optimizedMa }) {
+  const hasOverride = fastInput.trim() !== "" && slowInput.trim() !== "";
+  if (hasOverride) {
+    return clampMaConfig(fastInput, slowInput, maType, DEFAULT_MA);
+  }
+  const fast = optimizedMa?.fast ?? DEFAULT_MA.fast;
+  const slow = optimizedMa?.slow ?? DEFAULT_MA.slow;
+  return clampMaConfig(fast, slow, maType, DEFAULT_MA);
 }
 
 function formatPnl(v) {
@@ -138,9 +143,10 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [payload, setPayload] = useState(null);
-  const [maPeriods, setMaPeriods] = useState(DEFAULT_MA);
-  const [fastInput, setFastInput] = useState(String(DEFAULT_MA.fast));
-  const [slowInput, setSlowInput] = useState(String(DEFAULT_MA.slow));
+  const [optimizedMa, setOptimizedMa] = useState(null);
+  const [maType, setMaType] = useState(DEFAULT_MA.maType);
+  const [fastInput, setFastInput] = useState("");
+  const [slowInput, setSlowInput] = useState("");
   const [entryConfirm, setEntryConfirm] = useState(ENTRY_CONFIRM.SINGLE);
   const [favorites, setFavorites] = useState(loadFavorites);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(loadDisclaimerAccepted);
@@ -151,6 +157,7 @@ export default function App() {
     } catch {
       // ignore storage errors
     }
+    void fetch("/api/pageview", { method: "POST", keepalive: true });
     setDisclaimerAccepted(true);
   }
 
@@ -187,6 +194,9 @@ export default function App() {
       }
       setPayload(body);
       setSymbol(s);
+      setOptimizedMa(body.optimizedMa ?? null);
+      setFastInput("");
+      setSlowInput("");
     } catch (err) {
       setError(err?.message || String(err));
       setPayload(null);
@@ -204,11 +214,8 @@ export default function App() {
     load(input);
   }
 
-  function onSelectFromScanner(sym, optFast, optSlow) {
+  function onSelectFromScanner(sym) {
     setInput(sym);
-    applyMaPeriods(
-      clampMaConfig(optFast, optSlow, "ema", { fast: optFast, slow: optSlow, maType: "ema" })
-    );
     setPage("app");
     setTab("chart");
     load(sym);
@@ -219,28 +226,35 @@ export default function App() {
     setTab("home");
   }
 
-  function applyMaPeriods(next) {
-    setMaPeriods(next);
-    syncMaInputs(next, setFastInput, setSlowInput);
-  }
-
-  function updateMaType(maType) {
-    applyMaPeriods(clampMaConfig(maPeriods.fast, maPeriods.slow, maType, maPeriods));
+  function updateMaType(nextType) {
+    const type = nextType === "ema" ? "ema" : "sma";
+    setMaType(type);
+    if (fastInput.trim() !== "" && slowInput.trim() !== "") {
+      const next = clampMaConfig(fastInput, slowInput, type, DEFAULT_MA);
+      setFastInput(String(next.fast));
+      setSlowInput(String(next.slow));
+    }
   }
 
   function commitMaInputs() {
-    applyMaPeriods(clampMaConfig(fastInput, slowInput, maPeriods.maType, maPeriods));
+    if (fastInput.trim() === "" || slowInput.trim() === "") return;
+    const next = clampMaConfig(fastInput, slowInput, maType, DEFAULT_MA);
+    setFastInput(String(next.fast));
+    setSlowInput(String(next.slow));
   }
 
   const series = payload?.data ?? [];
-  const { fast, slow, maType } = maPeriods;
+  const { fast, slow, maType: chartMaType } = useMemo(
+    () => resolveChartMa({ fastInput, slowInput, maType, optimizedMa }),
+    [fastInput, slowInput, maType, optimizedMa]
+  );
 
   const { trades, markers } = useMemo(
     () =>
       series.length
-        ? simulateTrades(series, fast, slow, maType, { entryConfirm })
+        ? simulateTrades(series, fast, slow, chartMaType, { entryConfirm })
         : { trades: [], markers: [] },
-    [series, fast, slow, maType, entryConfirm]
+    [series, fast, slow, chartMaType, entryConfirm]
   );
 
   const tradesDisplay = useMemo(() => {
@@ -297,14 +311,14 @@ export default function App() {
               className="ma-legend-swatch"
               style={{ background: MA_FAST_COLOR }}
             />
-            Fast {maType.toUpperCase()}
+            Fast {chartMaType.toUpperCase()}
           </div>
           <div className="ma-legend-item">
             <span
               className="ma-legend-swatch"
               style={{ background: MA_SLOW_COLOR }}
             />
-            Slow {maType.toUpperCase()}
+            Slow {chartMaType.toUpperCase()}
           </div>
         </div>
 
@@ -348,8 +362,8 @@ export default function App() {
             onChange={(e) => updateMaType(e.target.value)}
             aria-label="MA type"
           >
-            <option value="ema">EMA</option>
             <option value="sma">SMA</option>
+            <option value="ema">EMA</option>
           </select>
         </label>
         <label className="ma-controls-field">
@@ -427,7 +441,7 @@ export default function App() {
                   markers={markers}
                   fastPeriod={fast}
                   slowPeriod={slow}
-                  maType={maType}
+                  maType={chartMaType}
                 />
               </>
             ) : (

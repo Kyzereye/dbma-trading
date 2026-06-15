@@ -4,10 +4,12 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { getPool } from "./db.js";
+import { incrementPageview } from "./pageviews.js";
 import {
   listScanDates,
   loadScanForDate,
   loadScanForLatestDate,
+  loadOptimizedMaForSymbol,
   loadTopPerformers,
   parseTopPerformerQuery,
   searchSymbols,
@@ -42,16 +44,36 @@ function normalizeDate(raw) {
 }
 
 const app = express();
+const CORS_ORIGINS = new Set([
+  FRONTEND_URL,
+  FRONTEND_URL.replace("localhost", "127.0.0.1"),
+]);
 app.use(
   cors({
-    origin: FRONTEND_URL,
-    methods: ["GET", "OPTIONS"],
+    origin(origin, callback) {
+      if (!origin || CORS_ORIGINS.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
+    methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   })
 );
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "dbma-trading-backend" });
+});
+
+app.post("/api/pageview", async (req, res) => {
+  try {
+    await incrementPageview(req.get("user-agent"));
+    res.status(204).end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || "Pageview update failed" });
+  }
 });
 
 app.get("/api/symbols", async (req, res) => {
@@ -228,6 +250,8 @@ app.get("/api/daily-stock-data", async (req, res) => {
         volume: Number(row.volume),
       }));
 
+    const optimizedMa = await loadOptimizedMaForSymbol(symbol);
+
     res.json({
       symbol,
       companyName: String(rows[0].company_name ?? "").trim() || null,
@@ -236,6 +260,7 @@ app.get("/api/daily-stock-data", async (req, res) => {
       toDate: data[data.length - 1].date,
       count: data.length,
       data,
+      optimizedMa,
     });
   } catch (err) {
     console.error(err);
