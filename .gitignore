@@ -5,3 +5,5 @@ backend/.env
 *.log
 video
 data/stored-symbols.json
+data/entry-filter-model.json
+data/pageviews.json
