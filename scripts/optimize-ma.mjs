@@ -50,9 +50,11 @@ async function main() {
     process.exit(1);
   }
 
-  const { top, baseline, totalPairs, from, to, barCount } = optimizeMa(bars);
+  const { top, baseline, totalPairs, from, to, barCount } = optimizeMa(bars, {
+    maType: "sma",
+  });
 
-  console.log(`\nEMA optimization — ${symbol}`);
+  console.log(`\nSMA optimization — ${symbol}`);
   console.log(`Bars: ${barCount} (${from} → ${to})`);
   console.log(`Rank: min(3y, 1y return) — top 3\n`);
 

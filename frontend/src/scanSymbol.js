@@ -1,8 +1,8 @@
-import { optimizeMa } from "./optimizeMa.js";
-import { simulateTrades } from "./tradeSignals.js";
-import { createEntryAllowFn } from "./entryFilter.js";
-
-const DEFAULT_OPT_MA = { fast: 21, slow: 50 };
+import { evaluateMaPair } from "./optimizeMa.js";
+import {
+  LOOKBACK_BARS,
+  simulateTradesWalkForward,
+} from "./walkForwardTrades.js";
 
 function runningTotalFromTrades(trades) {
   let total = 0;
@@ -57,25 +57,16 @@ function classifyLastSignal(trades, markers, lastBarDate) {
 }
 
 /**
- * Per-symbol scan: optimized MAs → rule opens/closes with optional regime + entry filter.
+ * Per-symbol scan: SMA grid on trailing 3y → walk-forward backtest for stats.
  */
-export function scanSymbol(bars, { useEntryFilter = false, entryFilterModel = null } = {}) {
+export function scanSymbol(bars) {
   if (!bars?.length) return null;
 
   const asOfDate = bars[bars.length - 1].date;
-  const { top } = optimizeMa(bars);
-  const best = top[0];
+  const { trades, markers, fast, slow } = simulateTradesWalkForward(bars, "sma");
+  const lookback = bars.slice(Math.max(0, bars.length - LOOKBACK_BARS));
+  const best = evaluateMaPair(lookback, fast, slow, "sma");
   const optUsedDefault = !best;
-  const fast = best?.fast ?? DEFAULT_OPT_MA.fast;
-  const slow = best?.slow ?? DEFAULT_OPT_MA.slow;
-
-  const allowEntry = useEntryFilter
-    ? createEntryAllowFn(entryFilterModel)
-    : null;
-
-  const { trades, markers } = simulateTrades(bars, fast, slow, "ema", {
-    allowEntry,
-  });
   const runningTotal = runningTotalFromTrades(trades);
   const runningTotalPct = runningTotalPctFromTrades(trades);
   const { lastSignal, signalDate } = classifyLastSignal(

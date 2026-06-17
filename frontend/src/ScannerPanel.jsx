@@ -129,7 +129,7 @@ export default function ScannerPanel({ activeSymbol, onSelectSymbol }) {
   }, [fetchScanner]);
 
   const handleSelect = (row) => {
-    onSelectSymbol(row.symbol, row.optFast, row.optSlow);
+    onSelectSymbol(row.symbol);
   };
 
   const filteredOpens = useMemo(

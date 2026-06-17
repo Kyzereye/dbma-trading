@@ -5,8 +5,9 @@ export default function TradingRules() {
       <p className="rules-intro">
         These rules are for <strong>swing trading on daily bars</strong>: each open
         and close is evaluated at the <strong>end-of-day close</strong>, not on
-        intraday ticks. Holds are meant to last multiple days or longer, not
-        minutes or hours.
+        intraday ticks. Orders are assumed to fill at the <strong>next trading
+        day&apos;s open</strong> after the signal bar. Holds are meant to last
+        multiple days or longer, not minutes or hours.
       </p>
       <p className="rules-intro">
         Signals are <strong>price vs moving average</strong> — where the daily
@@ -62,15 +63,15 @@ export default function TradingRules() {
         <h2>Moving average optimization</h2>
         <p>
           The nightly <strong>Signals</strong> scan and <strong>Daily log</strong>{" "}
-          use a fast and slow MA pair chosen separately for each symbol from
-          historical backtests. That optimization is a starting point only — it
-          may not be optimal for every symbol or market conditions, and mistakes
-          can occur.
+          use <strong>SMA</strong> periods chosen per symbol from a grid search on
+          trailing ~3 years of history. Each month, the pair is re-tested on data
+          available through the prior month (no lookahead) and used for the next
+          month. Backtest stats and signals use that walk-forward process.
         </p>
         <p>
-          On the <strong>Chart</strong> tab, enter your own preferred fast and
-          slow periods in the sidebar. Chart signals, markers, and the trades
-          table use your settings, not the scan defaults.
+          The displayed <strong>opt fast/slow</strong> is the current pair from the
+          latest trailing optimization. On the <strong>Chart</strong> tab, leave MA
+          inputs blank to use the optimized pair or enter your own periods to override (EMA or SMA from the sidebar).
         </p>
       </section>
     </div>

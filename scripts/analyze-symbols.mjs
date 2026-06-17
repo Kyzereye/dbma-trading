@@ -1,5 +1,5 @@
 /**
- * Analyze each symbol: optimized MAs, rule opens/closes, entry filter → symbol_daily_scan.
+ * Analyze each symbol: SMA grid + monthly walk-forward backtest → symbol_daily_scan.
  *
  *   npm run analyze-symbols
  *   npm run analyze-symbols -- --symbol AAPL
@@ -8,15 +8,14 @@
 
 import { scanSymbol } from "../frontend/src/scanSymbol.js";
 import { closePool } from "../backend/src/db.js";
-import { loadEntryFilterModel } from "./entryFilterLoad.mjs";
 import {
   listScannableSymbols,
   loadBarsForSymbol,
   upsertScanRow,
 } from "../backend/src/scanData.js";
+import { formatPct } from "../frontend/src/optimizeMa.js";
 
 const DELAY_MS = Number(process.env.SCAN_DELAY_MS) || 0;
-const entryFilterModel = loadEntryFilterModel();
 
 function parseArgs(argv) {
   const args = argv.slice(2);
@@ -42,10 +41,7 @@ async function analyzeOne(sym) {
   if (!bars.length) {
     return { sym, status: "skip", reason: "no bars" };
   }
-  const result = scanSymbol(bars, {
-    useEntryFilter: true,
-    entryFilterModel,
-  });
+  const result = scanSymbol(bars);
   if (!result) {
     return { sym, status: "skip", reason: "analyze failed" };
   }
@@ -66,10 +62,9 @@ async function main() {
     symbols = symbols.slice(0, limit);
   }
 
-  const filterNote = entryFilterModel
-    ? "entry filter: regime + ML model"
-    : "entry filter: regime only (run npm run train-entry-filter)";
-  console.log(`Analyzing ${symbols.length} symbol(s) — ${filterNote}\n`);
+  console.log(
+    `Analyzing ${symbols.length} symbol(s) — SMA grid + walk-forward\n`
+  );
 
   let ok = 0;
   let skipped = 0;
@@ -85,8 +80,10 @@ async function main() {
           r.lastSignal === "none"
             ? "—"
             : `${r.lastSignal}@${r.signalDate || r.asOfDate}`;
+        const rtPct =
+          r.runningTotalPct == null ? "n/a" : formatPct(r.runningTotalPct);
         console.log(
-          `${sym.padEnd(6)} ${r.optFast}/${r.optSlow}  RT ${r.runningTotal >= 0 ? "+" : ""}${r.runningTotal.toFixed(2)}  ${sig}`
+          `${sym.padEnd(6)} ${r.optFast}/${r.optSlow}  RT% ${rtPct}  ${sig}`
         );
       } else {
         skipped++;

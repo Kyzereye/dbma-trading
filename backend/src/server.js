@@ -8,11 +8,11 @@ import {
   listScanDates,
   loadScanForDate,
   loadScanForLatestDate,
+  loadOptimizedMaForSymbol,
   loadTopPerformers,
   parseTopPerformerQuery,
   searchSymbols,
 } from "./scanData.js";
-import { recordDisclaimerAccept } from "./pageViews.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
@@ -46,20 +46,10 @@ const app = express();
 app.use(
   cors({
     origin: FRONTEND_URL,
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   })
 );
-
-app.post("/api/pageview", async (req, res) => {
-  try {
-    await recordDisclaimerAccept(req.get("user-agent"));
-    res.status(204).end();
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Page view failed" });
-  }
-});
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "dbma-trading-backend" });
@@ -118,7 +108,14 @@ app.get("/api/scanner", async (req, res) => {
 
     const entries = rows.filter((r) => r.lastSignal === "entry");
     const exits = rows.filter((r) => r.lastSignal === "exit");
-    const byPnl = [...rows].sort((a, b) => b.runningTotal - a.runningTotal);
+    const byPnl = [...rows].sort((a, b) => {
+      const av = a.runningTotalPct;
+      const bv = b.runningTotalPct;
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return bv - av;
+    });
 
     res.json({
       asOfDate: meta.asOfDate,
@@ -239,6 +236,8 @@ app.get("/api/daily-stock-data", async (req, res) => {
         volume: Number(row.volume),
       }));
 
+    const optimizedMa = await loadOptimizedMaForSymbol(symbol);
+
     res.json({
       symbol,
       companyName: String(rows[0].company_name ?? "").trim() || null,
@@ -247,6 +246,7 @@ app.get("/api/daily-stock-data", async (req, res) => {
       toDate: data[data.length - 1].date,
       count: data.length,
       data,
+      optimizedMa,
     });
   } catch (err) {
     console.error(err);

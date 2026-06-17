@@ -131,7 +131,7 @@ export default function DailySignals({ onSelectSymbol }) {
   }
 
   function handleSelect(row) {
-    onSelectSymbol?.(row.symbol, row.optFast, row.optSlow);
+    onSelectSymbol?.(row.symbol);
   }
 
   const hasScanDates = availableDates.length > 0;

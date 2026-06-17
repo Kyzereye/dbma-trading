@@ -82,6 +82,26 @@ export async function searchSymbols(query, limit = 20) {
   return rows.map((r) => String(r.symbol).toUpperCase());
 }
 
+/** Latest optimized fast/slow from symbol_daily_scan, or null if never analyzed. */
+export async function loadOptimizedMaForSymbol(symbol) {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    `
+    SELECT opt_fast, opt_slow
+    FROM symbol_daily_scan
+    WHERE symbol = ?
+    ORDER BY as_of_date DESC
+    LIMIT 1
+    `,
+    [symbol]
+  );
+  if (!rows.length) return null;
+  const fast = Number(rows[0].opt_fast);
+  const slow = Number(rows[0].opt_slow);
+  if (!Number.isFinite(fast) || !Number.isFinite(slow)) return null;
+  return { fast, slow };
+}
+
 export async function loadBarsForSymbol(symbol) {
   const startDate = historyStartDate(HISTORY_YEARS);
   const pool = getPool();
@@ -314,7 +334,14 @@ export async function loadScanForDate(asOfDate, { topN = 25 } = {}) {
   const entries = mapped.filter((r) => r.lastSignal === "entry");
   const exits = mapped.filter((r) => r.lastSignal === "exit");
   const inPosition = mapped.filter((r) => r.lastSignal === "open");
-  const byPnl = [...mapped].sort((a, b) => b.runningTotal - a.runningTotal);
+  const byPnl = [...mapped].sort((a, b) => {
+    const av = a.runningTotalPct;
+    const bv = b.runningTotalPct;
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return bv - av;
+  });
 
   const [metaRows] = await pool.execute(
     `
