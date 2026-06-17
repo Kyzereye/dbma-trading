@@ -23,6 +23,30 @@ function computeSma(bars, period) {
   return out;
 }
 
+/** SMA value per bar index (null until period bars exist). */
+export function buildSmaIndexCache(bars, minPeriod, maxPeriod) {
+  const n = bars.length;
+  const closes = bars.map((b) => b.close);
+  const cache = new Map();
+  const lo = Math.max(2, minPeriod);
+  const hi = Math.max(lo, maxPeriod);
+
+  for (let period = lo; period <= hi; period++) {
+    const values = new Array(n).fill(null);
+    if (n >= period) {
+      let sum = 0;
+      for (let i = 0; i < period; i++) sum += closes[i];
+      values[period - 1] = sum / period;
+      for (let i = period; i < n; i++) {
+        sum += closes[i] - closes[i - period];
+        values[i] = sum / period;
+      }
+    }
+    cache.set(period, values);
+  }
+  return cache;
+}
+
 export function computeMaSeries(bars, period, maType = "ema") {
   return maType === "sma" ? computeSma(bars, period) : computeEma(bars, period);
 }

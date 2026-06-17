@@ -5,8 +5,9 @@ export default function TradingRules() {
       <p className="rules-intro">
         These rules are for <strong>swing trading on daily bars</strong>: each open
         and close is evaluated at the <strong>end-of-day close</strong>, not on
-        intraday ticks. Holds are meant to last multiple days or longer, not
-        minutes or hours.
+        intraday ticks. Orders are assumed to fill at the <strong>next trading
+        day&apos;s open</strong> after the signal bar. Holds are meant to last
+        multiple days or longer, not minutes or hours.
       </p>
       <p className="rules-intro">
         Signals are <strong>price vs moving average</strong> — where the daily

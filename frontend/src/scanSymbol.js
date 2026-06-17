@@ -56,7 +56,7 @@ function classifyLastSignal(trades, markers, lastBarDate) {
 }
 
 /**
- * Run per-symbol nightly scan: optimized EMA pair + trades + signals.
+ * Run per-symbol nightly scan: optimized SMA pair + trades + signals.
  */
 export function scanSymbol(bars) {
   if (!bars?.length) return null;
@@ -68,7 +68,7 @@ export function scanSymbol(bars) {
   const fast = best?.fast ?? DEFAULT_OPT_MA.fast;
   const slow = best?.slow ?? DEFAULT_OPT_MA.slow;
 
-  const { trades, markers } = simulateTrades(bars, fast, slow, "ema");
+  const { trades, markers } = simulateTrades(bars, fast, slow, "sma");
   const runningTotal = runningTotalFromTrades(trades);
   const runningTotalPct = runningTotalPctFromTrades(trades);
   const { lastSignal, signalDate } = classifyLastSignal(
