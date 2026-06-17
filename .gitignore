@@ -5,3 +5,4 @@ backend/.env
 *.log
 video
 data/stored-symbols.json
+sql_queries/sql_queries.sql
