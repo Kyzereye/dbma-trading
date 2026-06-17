@@ -174,18 +174,3 @@ export function simulateTradesWalkForward(
 
   return { trades, markers, fast, slow };
 }
-
-/** Current pair from trailing lookback (scanner / API). */
-export function optimizeMaCurrent(bars, maType = "sma") {
-  if (!bars?.length) {
-    return { fast: DEFAULT_MA.fast, slow: DEFAULT_MA.slow, usedDefault: true };
-  }
-  const start = Math.max(0, bars.length - LOOKBACK_BARS);
-  const lookback = bars.slice(start);
-  const { top } = optimizeMa(lookback, { maType, topN: 1 });
-  const best = top[0];
-  if (!best) {
-    return { fast: DEFAULT_MA.fast, slow: DEFAULT_MA.slow, usedDefault: true };
-  }
-  return { fast: best.fast, slow: best.slow, usedDefault: false, best };
-}

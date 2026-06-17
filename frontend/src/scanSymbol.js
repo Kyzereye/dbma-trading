@@ -1,8 +1,4 @@
-import { evaluateMaPair } from "./optimizeMa.js";
-import {
-  LOOKBACK_BARS,
-  simulateTradesWalkForward,
-} from "./walkForwardTrades.js";
+import { simulateTradesWalkForward } from "./walkForwardTrades.js";
 
 function runningTotalFromTrades(trades) {
   let total = 0;
@@ -57,16 +53,13 @@ function classifyLastSignal(trades, markers, lastBarDate) {
 }
 
 /**
- * Per-symbol scan: SMA grid on trailing 3y → walk-forward backtest for stats.
+ * Per-symbol scan: SMA walk-forward backtest for stats and signals.
  */
 export function scanSymbol(bars) {
   if (!bars?.length) return null;
 
   const asOfDate = bars[bars.length - 1].date;
   const { trades, markers, fast, slow } = simulateTradesWalkForward(bars, "sma");
-  const lookback = bars.slice(Math.max(0, bars.length - LOOKBACK_BARS));
-  const best = evaluateMaPair(lookback, fast, slow, "sma");
-  const optUsedDefault = !best;
   const runningTotal = runningTotalFromTrades(trades);
   const runningTotalPct = runningTotalPctFromTrades(trades);
   const { lastSignal, signalDate } = classifyLastSignal(
@@ -79,10 +72,10 @@ export function scanSymbol(bars) {
     asOfDate,
     optFast: fast,
     optSlow: slow,
-    optUsedDefault,
-    optR3y: best?.r3y ?? null,
-    optR1y: best?.r1y ?? null,
-    optMinReturn: best?.minReturn ?? null,
+    optUsedDefault: false,
+    optR3y: null,
+    optR1y: null,
+    optMinReturn: null,
     runningTotal,
     runningTotalPct,
     lastSignal,

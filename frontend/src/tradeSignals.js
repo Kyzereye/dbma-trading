@@ -16,8 +16,8 @@ export function simulateTrades(
   bars,
   fastPeriod = 21,
   slowPeriod = 50,
-  maType = "ema",
-  { entryConfirm = ENTRY_CONFIRM.SINGLE, allowEntry = null } = {}
+  maType = "sma",
+  { entryConfirm = ENTRY_CONFIRM.SINGLE } = {}
 ) {
   const requireDouble = entryConfirm === ENTRY_CONFIRM.DOUBLE;
   const maFast = maByDate(bars, fastPeriod, maType);
@@ -82,18 +82,15 @@ export function simulateTrades(
       eFast > eSlow &&
       (!requireDouble || consecutiveClosesAboveFast >= 2)
     ) {
-      const entryCtx = { bar, bars, barIndex, eFast, eSlow, maFast, maSlow };
-      if (!allowEntry || allowEntry(entryCtx)) {
-        markers.push({
-          time: bar.date,
-          position: "belowBar",
-          shape: "arrowUp",
-          color: "#6abf69",
-          text: "Open",
-        });
-        if (hasNextBar) {
-          pendingEntry = true;
-        }
+      markers.push({
+        time: bar.date,
+        position: "belowBar",
+        shape: "arrowUp",
+        color: "#6abf69",
+        text: "Open",
+      });
+      if (hasNextBar) {
+        pendingEntry = true;
       }
     }
   }
@@ -113,7 +110,7 @@ export function simulateTradesWithMaCache(
   fastPeriod,
   slowPeriod,
   maCache,
-  { entryConfirm = ENTRY_CONFIRM.SINGLE, allowEntry = null, startIndex = 0 } = {}
+  { entryConfirm = ENTRY_CONFIRM.SINGLE, startIndex = 0 } = {}
 ) {
   const requireDouble = entryConfirm === ENTRY_CONFIRM.DOUBLE;
   const maFast = maCache.get(fastPeriod);
@@ -180,17 +177,14 @@ export function simulateTradesWithMaCache(
       eFast > eSlow &&
       (!requireDouble || consecutiveClosesAboveFast >= 2)
     ) {
-      const entryCtx = { bar, bars, barIndex, eFast, eSlow };
-      if (!allowEntry || allowEntry(entryCtx)) {
-        markers.push({
-          time: bar.date,
-          position: "belowBar",
-          shape: "arrowUp",
-          color: "#6abf69",
-          text: "Open",
-        });
-        if (hasNextBar) pendingEntry = true;
-      }
+      markers.push({
+        time: bar.date,
+        position: "belowBar",
+        shape: "arrowUp",
+        color: "#6abf69",
+        text: "Open",
+      });
+      if (hasNextBar) pendingEntry = true;
     }
   }
 

@@ -187,12 +187,6 @@ function mapScanRow(row) {
     assetType: row.asset_type ? String(row.asset_type) : "stock",
     price: row.last_close != null ? Number(row.last_close) : null,
     asOfDate: formatDateOnly(row.as_of_date),
-    optFast: Number(row.opt_fast),
-    optSlow: Number(row.opt_slow),
-    optUsedDefault: Boolean(row.opt_used_default),
-    optR3y: row.opt_r3y != null ? Number(row.opt_r3y) : null,
-    optR1y: row.opt_r1y != null ? Number(row.opt_r1y) : null,
-    optMinReturn: row.opt_min_return != null ? Number(row.opt_min_return) : null,
     runningTotal: Number(row.running_total),
     runningTotalPct:
       row.running_total_pct != null ? Number(row.running_total_pct) : null,

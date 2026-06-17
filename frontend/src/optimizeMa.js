@@ -135,15 +135,6 @@ function buildPairResult(fast, slow, r3y, r1y) {
   };
 }
 
-/** Score one fast/slow pair (same rules as grid search). */
-export function evaluateMaPair(bars, fast, slow, maType = DEFAULT_MA_TYPE) {
-  const bars1y = sliceLastBars(bars, DAYS_1Y);
-  const r3y = evaluateWindow(bars, fast, slow, MIN_TRADES_3Y, maType);
-  const r1y = evaluateWindow(bars1y, fast, slow, MIN_TRADES_1Y, maType);
-  if (!r3y || !r1y) return null;
-  return buildPairResult(fast, slow, r3y, r1y);
-}
-
 /**
  * Grid-search fast/slow; rank by profit score (return + per-trade quality − chop).
  * anchor: refine ±REFINE_RADIUS (step 2) around prior pair; omit for full grid.
@@ -205,7 +196,6 @@ export function optimizeMa(
     top: results.slice(0, topN),
     baseline: baseline ? { ...baseline, rank: baselineRank } : null,
     totalPairs: pairs.length,
-    evaluatedPairs: results.length,
     barCount: bars.length,
     from: bars[0].date,
     to: bars[bars.length - 1].date,
