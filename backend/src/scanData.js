@@ -221,13 +221,11 @@ function applyScanFilters(
     if (assetTypes != null && !assetTypes.includes(row.assetType)) {
       return false;
     }
-    const priceFilter =
-      row.assetType !== "forex" && row.assetType !== "crypto";
-    if (priceFilter && priceMin != null) {
-      if (row.price == null || row.price < priceMin) return false;
+    if (priceMin != null && (row.price == null || row.price < priceMin)) {
+      return false;
     }
-    if (priceFilter && priceMax != null) {
-      if (row.price == null || row.price > priceMax) return false;
+    if (priceMax != null && (row.price == null || row.price > priceMax)) {
+      return false;
     }
     return true;
   });

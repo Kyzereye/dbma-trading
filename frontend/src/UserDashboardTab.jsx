@@ -106,14 +106,8 @@ function filterTopRows(rows, priceMin, priceMax, assetTypes) {
 
   return rows.filter((row) => {
     if (!enabledAssets.includes(row.assetType)) return false;
-    const priceFilter =
-      row.assetType !== "forex" && row.assetType !== "crypto";
-    if (priceFilter && min != null && (row.price == null || row.price < min)) {
-      return false;
-    }
-    if (priceFilter && max != null && (row.price == null || row.price > max)) {
-      return false;
-    }
+    if (min != null && (row.price == null || row.price < min)) return false;
+    if (max != null && (row.price == null || row.price > max)) return false;
     return true;
   });
 }
@@ -374,7 +368,11 @@ export default function UserDashboardTab({ onSelectSymbol, onGoRules }) {
                   })}
                 </tbody>
               </table>
-            ) : null}
+            ) : (
+              <p className="scanner-empty">
+                No symbol data at this price range for the selected asset types.
+              </p>
+            )}
           </section>
         </div>
 
