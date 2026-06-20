@@ -164,10 +164,10 @@ async function getLatestScanMeta() {
   const pool = getPool();
   const [rows] = await pool.execute(
     `
-    SELECT as_of_date AS asOfDate, MAX(computed_at) AS computedAt
+    SELECT as_of_date AS asOfDate, MAX(computed_at) AS computedAt, COUNT(*) AS n
     FROM symbol_daily_scan
     GROUP BY as_of_date
-    ORDER BY as_of_date DESC
+    ORDER BY n DESC, as_of_date DESC
     LIMIT 1
     `
   );
